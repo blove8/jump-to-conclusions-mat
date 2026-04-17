@@ -72,6 +72,7 @@
       user-select: none;
       position: relative;
       overflow: hidden;
+      white-space: pre-line;
     }
 
     .zone.active {
@@ -104,7 +105,7 @@
                   top  0.5s cubic-bezier(0.22,1,0.36,1);
       z-index: 10;
       filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-      transform: translate(-50%, -50%);
+      transform: translate(-35%, -80%);
     }
 
     .person.jumping {
@@ -112,9 +113,9 @@
     }
 
     @keyframes jump-anim {
-      0%   { transform: translate(-50%, -50%) scale(1); }
-      40%  { transform: translate(-50%, calc(-50% - 30px)) scale(1.2) rotate(-8deg); }
-      100% { transform: translate(-50%, -50%) scale(1); }
+      0%   { transform: translate(-35%, -80%) scale(1); }
+      40%  { transform: translate(-35%, calc(-80% - 30px)) scale(1.2) rotate(-8deg); }
+      100% { transform: translate(-35%, -80%) scale(1); }
     }
 
     .controls {
@@ -208,7 +209,7 @@
     <button class="btn-jump" id="jumpBtn">JUMP!</button>
     <div class="conclusion-display">
       <div class="conclusion-label" id="conclusionLabel"></div>
-      <div class="conclusion-text" id="conclusionText"></div>
+      <div class="conclusion-text" id="conclusionText" aria-live="polite" aria-atomic="true"></div>
       <div class="jump-count" id="jumpCount"></div>
     </div>
   </div>
@@ -240,29 +241,31 @@
 
     let jumpCount = 0;
     let currentZone = null;
+    const tileCooldownTurns = 3;
+    const lastLandedTurnByIndex = new Array(conclusions.length).fill(-Infinity);
 
     // Build zones
     conclusions.forEach((text, i) => {
       const zone = document.createElement('div');
       zone.className = 'zone';
       zone.dataset.index = i;
-      zone.innerHTML = text.replace(/\n/g, '<br>');
+      zone.textContent = text;
       mat.appendChild(zone);
     });
 
-    function getZoneCenter(zoneEl) {
+    function getZoneLandingPosition(zoneEl) {
       const matRect = mat.getBoundingClientRect();
       const zoneRect = zoneEl.getBoundingClientRect();
       return {
-        x: zoneRect.left - matRect.left + zoneRect.width / 2,
-        y: zoneRect.top  - matRect.top  + zoneRect.height / 2,
+        x: zoneRect.left - matRect.left + 18,
+        y: zoneRect.top  - matRect.top  + zoneRect.height - 16,
       };
     }
 
     function placePerson(zoneEl, animate) {
-      const center = getZoneCenter(zoneEl);
-      person.style.left = center.x + 'px';
-      person.style.top  = center.y + 'px';
+      const landing = getZoneLandingPosition(zoneEl);
+      person.style.left = landing.x + 'px';
+      person.style.top  = landing.y + 'px';
       if (animate) {
         person.classList.remove('jumping');
         void person.offsetWidth;
@@ -270,10 +273,25 @@
       }
     }
 
+    function getEligibleLandingZones() {
+      const nextTurn = jumpCount + 1;
+      const zones = Array.from(mat.querySelectorAll('.zone'));
+      return zones.filter((zoneEl) => {
+        const index = Number(zoneEl.dataset.index);
+        return nextTurn - lastLandedTurnByIndex[index] >= tileCooldownTurns;
+      });
+    }
+
     // Start person on first zone without animation
     window.addEventListener('load', () => {
       const firstZone = mat.querySelector('.zone');
       placePerson(firstZone, false);
+    });
+
+    // Keep the avatar aligned to its current tile after resize/orientation changes.
+    window.addEventListener('resize', () => {
+      const targetZone = currentZone || mat.querySelector('.zone');
+      if (targetZone) placePerson(targetZone, false);
     });
 
     jumpBtn.addEventListener('click', () => {
@@ -284,8 +302,10 @@
       conclusionText.classList.remove('visible');
 
       const zones = mat.querySelectorAll('.zone');
-      let remaining = 12;
-      let picked = Math.floor(Math.random() * conclusions.length);
+      const eligibleZones = getEligibleLandingZones();
+      const landingPool = eligibleZones.length > 0 ? eligibleZones : Array.from(zones);
+      const landedZone = landingPool[Math.floor(Math.random() * landingPool.length)];
+      const picked = Number(landedZone.dataset.index);
 
       // Quick hop animation across random zones before landing
       let hops = 0;
@@ -298,11 +318,11 @@
           clearInterval(hopInterval);
 
           // Final landing
-          const landedZone = zones[picked];
           placePerson(landedZone, true);
           landedZone.classList.add('active');
           currentZone = landedZone;
           jumpCount++;
+          lastLandedTurnByIndex[picked] = jumpCount;
 
           conclusionLabel.textContent = 'You have concluded:';
           conclusionText.textContent = conclusions[picked].replace(/\n/g, ' ');
