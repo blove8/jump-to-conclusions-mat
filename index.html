@@ -694,10 +694,15 @@
       }
       if (!speechPrimed && 'speechSynthesis' in window) {
         try {
-          const warmup = new SpeechSynthesisUtterance('');
-          warmup.volume = 0;
+          // iOS ignores empty/volume-0 warmups and requires a real utterance
+          // inside a user gesture to unlock the speech engine.
+          const warmup = new SpeechSynthesisUtterance(' ');
+          warmup.volume = 0.01;
+          warmup.rate = 1;
           window.speechSynthesis.speak(warmup);
           speechPrimed = true;
+          // Voices may populate async on iOS/Chrome; get() triggers the load.
+          window.speechSynthesis.getVoices();
         } catch (_) {}
       }
       renderAudioDiag();
@@ -712,20 +717,48 @@
       if (!audioCtx) { lastBoingAttempt = 'no-ctx'; renderAudioDiag(); return; }
       if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
       try {
+        const t = audioCtx.currentTime;
+        const duration = 0.45;
+
+        // Carrier: fast exponential pitch drop, the "boing" core
         const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(780, t);
+        osc.frequency.exponentialRampToValueAtTime(95, t + 0.38);
+
+        // Vibrato LFO wobbles the pitch for the cartoon springy feel
+        const vibrato = audioCtx.createOscillator();
+        const vibratoGain = audioCtx.createGain();
+        vibrato.type = 'sine';
+        vibrato.frequency.setValueAtTime(22, t);
+        vibrato.frequency.exponentialRampToValueAtTime(8, t + duration);
+        vibratoGain.gain.setValueAtTime(55, t);
+        vibratoGain.gain.exponentialRampToValueAtTime(3, t + duration);
+        vibrato.connect(vibratoGain);
+        vibratoGain.connect(osc.frequency);
+
+        // Resonant lowpass sweep adds the rubbery "thwong" timbre
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.Q.value = 7;
+        filter.frequency.setValueAtTime(2400, t);
+        filter.frequency.exponentialRampToValueAtTime(380, t + duration);
+
+        // Quick attack, slower decay
         const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.4, t + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(280, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.2);
-
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
-
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.22);
+
+        vibrato.start(t);
+        osc.start(t);
+        vibrato.stop(t + duration + 0.02);
+        osc.stop(t + duration + 0.02);
+
         lastBoingAttempt = `ok(${audioCtx.state})`;
       } catch (err) {
         lastBoingAttempt = `err:${(err && err.name) || 'x'}`;
@@ -733,14 +766,25 @@
       renderAudioDiag();
     }
 
-    function narrate(text) {
-      if (!narratorMode.checked) { lastSpeakAttempt = 'off'; renderAudioDiag(); return; }
-      if (!('speechSynthesis' in window)) { lastSpeakAttempt = 'n/a'; renderAudioDiag(); return; }
-      try { window.speechSynthesis.resume(); } catch (_) {}
-      window.speechSynthesis.cancel();
+    function pickEnglishVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+      return (
+        voices.find((v) => v.lang === 'en-US' && v.default) ||
+        voices.find((v) => v.lang === 'en-US') ||
+        voices.find((v) => v.lang && v.lang.startsWith('en')) ||
+        voices[0]
+      );
+    }
+
+    function speakNow(text) {
       const utter = new SpeechSynthesisUtterance(text);
       utter.rate = config.narratorRate;
       utter.pitch = config.narratorPitch;
+      utter.volume = 1;
+      const voice = pickEnglishVoice();
+      if (voice) utter.voice = voice;
       utter.addEventListener('start', () => { lastSpeakAttempt = 'started'; renderAudioDiag(); });
       utter.addEventListener('end', () => { lastSpeakAttempt = 'ended'; renderAudioDiag(); });
       utter.addEventListener('error', (e) => { lastSpeakAttempt = `err:${e.error || 'x'}`; renderAudioDiag(); });
@@ -751,6 +795,22 @@
         lastSpeakAttempt = `throw:${(err && err.name) || 'x'}`;
       }
       renderAudioDiag();
+    }
+
+    function narrate(text) {
+      if (!narratorMode.checked) { lastSpeakAttempt = 'off'; renderAudioDiag(); return; }
+      if (!('speechSynthesis' in window)) { lastSpeakAttempt = 'n/a'; renderAudioDiag(); return; }
+      try { window.speechSynthesis.resume(); } catch (_) {}
+      // iOS Safari has a bug where cancel() immediately followed by speak()
+      // leaves the new utterance queued forever. Delay speak() to the next
+      // tick so the cancel fully flushes first.
+      const speaking = window.speechSynthesis.speaking || window.speechSynthesis.pending;
+      if (speaking) {
+        window.speechSynthesis.cancel();
+        setTimeout(() => speakNow(text), 60);
+      } else {
+        speakNow(text);
+      }
     }
 
     function burstConfetti() {
