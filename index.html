@@ -389,6 +389,20 @@
       margin-top: 0.85rem;
     }
 
+    .audio-diag {
+      margin-top: 1rem;
+      font-size: 0.72rem;
+      color: #888;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      letter-spacing: 0.03em;
+      min-height: 1em;
+    }
+
+    .audio-diag .ok { color: #6fcf97; }
+    .audio-diag .warn { color: #f2c94c; }
+    .audio-diag .bad { color: #eb5757; }
+
     footer {
       margin-top: 3rem;
       font-size: 0.72rem;
@@ -416,6 +430,12 @@
       <button class="btn-jump" id="jumpBtn">JUMP!</button>
       <button class="btn-secondary" id="autoFiveBtn">AUTO x5</button>
       <button class="btn-secondary" id="resetBtn">RESET STATS</button>
+    </div>
+
+    <div class="conclusion-display">
+      <div class="conclusion-label" id="conclusionLabel"></div>
+      <div class="conclusion-text" id="conclusionText" aria-live="polite" aria-atomic="true"></div>
+      <div class="jump-count" id="jumpCount"></div>
     </div>
 
     <details class="config-panel" id="settingsPanel">
@@ -476,11 +496,7 @@
       </div>
     </details>
 
-    <div class="conclusion-display">
-      <div class="conclusion-label" id="conclusionLabel"></div>
-      <div class="conclusion-text" id="conclusionText" aria-live="polite" aria-atomic="true"></div>
-      <div class="jump-count" id="jumpCount"></div>
-    </div>
+    <div class="audio-diag" id="audioDiag" aria-live="polite"></div>
   </div>
 
   <footer>Patent Pending - Initech R&amp;D Division - Est. 1999</footer>
@@ -598,6 +614,34 @@
     }
 
     let sharedAudioCtx = null;
+    let audioUnlocked = false;
+    let speechPrimed = false;
+    let lastBoingAttempt = null;
+    let lastSpeakAttempt = null;
+    const audioDiag = document.getElementById('audioDiag');
+
+    function renderAudioDiag() {
+      if (!audioDiag) return;
+      const ctxState = sharedAudioCtx ? sharedAudioCtx.state : 'none';
+      const ctxClass = ctxState === 'running' ? 'ok' : (ctxState === 'suspended' ? 'warn' : 'bad');
+      const unlockClass = audioUnlocked ? 'ok' : 'warn';
+      const speechHas = 'speechSynthesis' in window;
+      const speechClass = speechPrimed ? 'ok' : (speechHas ? 'warn' : 'bad');
+      const silentClass = silentPlayed ? 'ok' : 'warn';
+      const voiceCount = speechHas ? (window.speechSynthesis.getVoices() || []).length : 0;
+      const voicesClass = voiceCount > 0 ? 'ok' : 'warn';
+      const parts = [
+        `ctx:<span class="${ctxClass}">${ctxState}</span>`,
+        `unlocked:<span class="${unlockClass}">${audioUnlocked}</span>`,
+        `silent:<span class="${silentClass}">${silentPlayed ? 'played' : 'no'}</span>`,
+        `speech:<span class="${speechClass}">${speechPrimed ? 'primed' : (speechHas ? 'idle' : 'n/a')}</span>`,
+        `voices:<span class="${voicesClass}">${voiceCount}</span>`,
+      ];
+      if (lastBoingAttempt) parts.push(`boing:${lastBoingAttempt}`);
+      if (lastSpeakAttempt) parts.push(`spoke:${lastSpeakAttempt}`);
+      audioDiag.innerHTML = parts.join(' | ');
+    }
+
     function getAudioCtx() {
       if (sharedAudioCtx) return sharedAudioCtx;
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -606,48 +650,197 @@
       return sharedAudioCtx;
     }
 
-    // iOS/Android browsers require the AudioContext to be resumed during a
-    // user gesture before any audio will play. Prime it once on first input.
-    function unlockAudio() {
-      const ctx = getAudioCtx();
-      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    // iOS Safari requires the AudioContext to be resumed AND to play a real
+    // (even silent) buffer inside a user gesture before later scheduled audio
+    // plays. `speechSynthesis` similarly needs to be primed in-gesture.
+    // Build a valid silent WAV data URI on the fly (0.05s mono 44.1kHz).
+    // Used via HTMLAudio on first gesture to upgrade iOS Safari's audio
+    // session so WebAudio ignores the physical ringer/silent switch.
+    function buildSilentWavDataUri() {
+      const samples = 2205; // 0.05s at 44100Hz
+      const byteLen = 44 + samples * 2;
+      const bytes = new Uint8Array(byteLen);
+      const view = new DataView(bytes.buffer);
+      view.setUint32(0, 0x52494646, false);
+      view.setUint32(4, 36 + samples * 2, true);
+      view.setUint32(8, 0x57415645, false);
+      view.setUint32(12, 0x666d7420, false);
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, 44100, true);
+      view.setUint32(28, 44100 * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      view.setUint32(36, 0x64617461, false);
+      view.setUint32(40, samples * 2, true);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return 'data:audio/wav;base64,' + btoa(bin);
     }
-    ['pointerdown', 'touchstart', 'keydown'].forEach((evt) => {
-      window.addEventListener(evt, unlockAudio, { once: true, passive: true });
+    const SILENT_WAV = buildSilentWavDataUri();
+    let silentAudioEl = null;
+    let silentPlayed = false;
+
+    function primeSilentAudioSession() {
+      if (silentPlayed) return;
+      try {
+        if (!silentAudioEl) {
+          silentAudioEl = new Audio(SILENT_WAV);
+          silentAudioEl.loop = false;
+          silentAudioEl.preload = 'auto';
+          silentAudioEl.muted = false;
+          silentAudioEl.volume = 0.01;
+        }
+        const playPromise = silentAudioEl.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.then(() => { silentPlayed = true; renderAudioDiag(); }).catch(() => {});
+        } else {
+          silentPlayed = true;
+        }
+      } catch (_) {}
+    }
+
+    function primeAudio() {
+      primeSilentAudioSession();
+      const ctx = getAudioCtx();
+      if (ctx) {
+        if (ctx.state === 'suspended') ctx.resume().then(renderAudioDiag).catch(() => {});
+        if (!audioUnlocked) {
+          try {
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+            audioUnlocked = true;
+          } catch (_) {}
+        }
+      }
+      if (!speechPrimed && 'speechSynthesis' in window) {
+        try {
+          // iOS ignores empty/whitespace warmups — use a real short word
+          // at near-silent volume to actually unlock the speech engine.
+          const warmup = new SpeechSynthesisUtterance('go');
+          warmup.volume = 0.01;
+          warmup.rate = 1;
+          const v = pickEnglishVoice();
+          if (v) warmup.voice = v;
+          window.speechSynthesis.speak(warmup);
+          speechPrimed = true;
+          // Voices populate async on iOS/Chrome; getVoices() triggers load.
+          window.speechSynthesis.getVoices();
+        } catch (_) {}
+      }
+      renderAudioDiag();
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener?.('voiceschanged', renderAudioDiag);
+    }
+    ['pointerdown', 'touchstart', 'click', 'keydown'].forEach((evt) => {
+      window.addEventListener(evt, primeAudio, { capture: true, passive: true });
     });
 
     function playBoing() {
-      if (!soundMode.checked) return;
+      if (!soundMode.checked) { lastBoingAttempt = 'muted'; renderAudioDiag(); return; }
       const audioCtx = getAudioCtx();
-      if (!audioCtx) return;
+      if (!audioCtx) { lastBoingAttempt = 'no-ctx'; renderAudioDiag(); return; }
       if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
       try {
+        const t = audioCtx.currentTime;
+        const duration = 0.45;
+
+        // Carrier: fast exponential pitch drop, the "boing" core
         const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(780, t);
+        osc.frequency.exponentialRampToValueAtTime(95, t + 0.38);
+
+        // Vibrato LFO wobbles the pitch for the cartoon springy feel
+        const vibrato = audioCtx.createOscillator();
+        const vibratoGain = audioCtx.createGain();
+        vibrato.type = 'sine';
+        vibrato.frequency.setValueAtTime(22, t);
+        vibrato.frequency.exponentialRampToValueAtTime(8, t + duration);
+        vibratoGain.gain.setValueAtTime(55, t);
+        vibratoGain.gain.exponentialRampToValueAtTime(3, t + duration);
+        vibrato.connect(vibratoGain);
+        vibratoGain.connect(osc.frequency);
+
+        // Resonant lowpass sweep adds the rubbery "thwong" timbre
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.Q.value = 7;
+        filter.frequency.setValueAtTime(2400, t);
+        filter.frequency.exponentialRampToValueAtTime(380, t + duration);
+
+        // Quick attack, slower decay
         const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.4, t + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(280, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.2);
-
-        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
-
-        osc.connect(gain);
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.22);
-      } catch (_) {
-        // Ignore audio failures on locked-down browsers.
+
+        vibrato.start(t);
+        osc.start(t);
+        vibrato.stop(t + duration + 0.02);
+        osc.stop(t + duration + 0.02);
+
+        lastBoingAttempt = `ok(${audioCtx.state})`;
+      } catch (err) {
+        lastBoingAttempt = `err:${(err && err.name) || 'x'}`;
       }
+      renderAudioDiag();
     }
 
-    function narrate(text) {
-      if (!narratorMode.checked || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
+    function pickEnglishVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+      return (
+        voices.find((v) => v.lang === 'en-US' && v.default) ||
+        voices.find((v) => v.lang === 'en-US') ||
+        voices.find((v) => v.lang && v.lang.startsWith('en')) ||
+        voices[0]
+      );
+    }
+
+    function speakNow(text) {
       const utter = new SpeechSynthesisUtterance(text);
       utter.rate = config.narratorRate;
       utter.pitch = config.narratorPitch;
-      window.speechSynthesis.speak(utter);
+      utter.volume = 1;
+      const voice = pickEnglishVoice();
+      if (voice) utter.voice = voice;
+      utter.addEventListener('start', () => { lastSpeakAttempt = 'started'; renderAudioDiag(); });
+      utter.addEventListener('end', () => { lastSpeakAttempt = 'ended'; renderAudioDiag(); });
+      utter.addEventListener('error', (e) => { lastSpeakAttempt = `err:${e.error || 'x'}`; renderAudioDiag(); });
+      try {
+        window.speechSynthesis.speak(utter);
+        lastSpeakAttempt = 'queued';
+      } catch (err) {
+        lastSpeakAttempt = `throw:${(err && err.name) || 'x'}`;
+      }
+      renderAudioDiag();
+    }
+
+    function narrate(text) {
+      if (!narratorMode.checked) { lastSpeakAttempt = 'off'; renderAudioDiag(); return; }
+      if (!('speechSynthesis' in window)) { lastSpeakAttempt = 'n/a'; renderAudioDiag(); return; }
+      try { window.speechSynthesis.resume(); } catch (_) {}
+      // iOS Safari has a bug where cancel() immediately followed by speak()
+      // leaves the new utterance queued forever. Delay speak() to the next
+      // tick so the cancel fully flushes first.
+      const speaking = window.speechSynthesis.speaking || window.speechSynthesis.pending;
+      if (speaking) {
+        window.speechSynthesis.cancel();
+        setTimeout(() => speakNow(text), 60);
+      } else {
+        speakNow(text);
+      }
     }
 
     function burstConfetti() {
@@ -740,6 +933,13 @@
       const zones = Array.from(mat.querySelectorAll('.zone'));
       const landedZone = chooseLandingZone(zones);
       const picked = Number(landedZone.dataset.index);
+      const selectedText = conclusions[picked].replace(/\n/g, ' ');
+
+      // Speak NOW while we're still inside the user-gesture call stack.
+      // iOS Safari blocks speechSynthesis.speak() outside a gesture, so
+      // deferring this to after the hop animation (as before) silently
+      // queued without starting.
+      narrate(selectedText);
 
       // Quick hop animation across random zones before landing
       let hops = 0;
@@ -762,12 +962,10 @@
             blameCounts[picked] += 1;
             landedZone.dataset.hit = String(blameCounts[picked]);
 
-            const selectedText = conclusions[picked].replace(/\n/g, ' ');
             conclusionLabel.textContent = 'You have concluded:';
             conclusionText.textContent = selectedText;
 
             playBoing();
-            narrate(selectedText);
             applyChaosShake();
 
             if (Math.random() < config.confettiChance || picked === lastPicked) {
@@ -914,6 +1112,7 @@
     loadConfig();
     renderConfigInputs();
     bindConfigInputs();
+    renderAudioDiag();
   </script>
 </body>
 </html>
