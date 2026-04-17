@@ -297,6 +297,91 @@
       to { opacity: 0; transform: translateY(220px) rotate(320deg); }
     }
 
+    .config-panel {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      width: 100%;
+    }
+
+    .config-panel > summary {
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #f5c842;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      list-style: none;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .config-panel > summary::-webkit-details-marker { display: none; }
+
+    .config-panel > summary::after {
+      content: '▸';
+      transition: transform 0.2s;
+      color: #c18f39;
+    }
+
+    .config-panel[open] > summary::after {
+      transform: rotate(90deg);
+    }
+
+    .config-body {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.7rem 1rem;
+      margin-top: 0.85rem;
+    }
+
+    .config-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.78rem;
+      color: #ddd;
+    }
+
+    .config-row label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .config-row .config-value {
+      color: #f5c842;
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+    }
+
+    .config-row input[type="range"] {
+      width: 100%;
+      accent-color: #d4a853;
+    }
+
+    .config-row input[type="number"],
+    .config-row input[type="text"] {
+      width: 100%;
+      border: 1px solid #7d6f4d;
+      border-radius: 6px;
+      padding: 0.4rem 0.55rem;
+      background: #231a0f;
+      color: #f3e5c4;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+
+    .config-footer {
+      margin-top: 0.85rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+
     footer {
       margin-top: 3rem;
       font-size: 0.72rem;
@@ -339,6 +424,47 @@
       </div>
       <div class="status-line" id="statsLine"></div>
     </div>
+
+    <details class="config-panel" id="configPanel">
+      <summary>Config</summary>
+      <div class="config-body">
+        <div class="config-row">
+          <label>Hop count base <span class="config-value" id="hopCountBaseValue"></span></label>
+          <input type="range" id="cfgHopCountBase" min="1" max="20" step="1">
+        </div>
+        <div class="config-row">
+          <label>Hop interval (ms) <span class="config-value" id="hopIntervalValue"></span></label>
+          <input type="range" id="cfgHopInterval" min="30" max="300" step="10">
+        </div>
+        <div class="config-row">
+          <label>Tile cooldown (turns) <span class="config-value" id="tileCooldownValue"></span></label>
+          <input type="range" id="cfgTileCooldown" min="0" max="10" step="1">
+        </div>
+        <div class="config-row">
+          <label>Intern bias chance <span class="config-value" id="internBiasChanceValue"></span></label>
+          <input type="range" id="cfgInternBiasChance" min="0" max="1" step="0.05">
+        </div>
+        <div class="config-row">
+          <label>Confetti chance <span class="config-value" id="confettiChanceValue"></span></label>
+          <input type="range" id="cfgConfettiChance" min="0" max="1" step="0.05">
+        </div>
+        <div class="config-row">
+          <label>Narrator rate <span class="config-value" id="narratorRateValue"></span></label>
+          <input type="range" id="cfgNarratorRate" min="0.5" max="1.5" step="0.05">
+        </div>
+        <div class="config-row">
+          <label>Narrator pitch <span class="config-value" id="narratorPitchValue"></span></label>
+          <input type="range" id="cfgNarratorPitch" min="0.5" max="1.5" step="0.05">
+        </div>
+        <div class="config-row">
+          <label>Person emoji</label>
+          <input type="text" id="cfgPersonEmoji" maxlength="4">
+        </div>
+      </div>
+      <div class="config-footer">
+        <button class="btn-secondary" id="restoreDefaultsBtn">RESTORE DEFAULTS</button>
+      </div>
+    </details>
 
     <div class="conclusion-display">
       <div class="conclusion-label" id="conclusionLabel"></div>
@@ -387,9 +513,64 @@
     let currentZone = null;
     let lastPicked = -1;
     let isJumping = false;
-    const tileCooldownTurns = 3;
     const lastLandedTurnByIndex = new Array(conclusions.length).fill(-Infinity);
     const blameCounts = new Array(conclusions.length).fill(0);
+
+    const CONFIG_STORAGE_KEY = 'jtcmat.config.v1';
+    const CONFIG_DEFAULTS = Object.freeze({
+      hopCountBase: 5,
+      hopIntervalMs: 100,
+      tileCooldownTurns: 3,
+      internBiasChance: 0.65,
+      confettiChance: 0.18,
+      narratorRate: 0.95,
+      narratorPitch: 0.85,
+      personEmoji: '🧍',
+    });
+    const config = { ...CONFIG_DEFAULTS };
+
+    const CONFIG_SCHEMA = {
+      hopCountBase:       { el: 'cfgHopCountBase',      value: 'hopCountBaseValue',      type: 'int',   min: 1,   max: 20  },
+      hopIntervalMs:      { el: 'cfgHopInterval',       value: 'hopIntervalValue',       type: 'int',   min: 30,  max: 300 },
+      tileCooldownTurns:  { el: 'cfgTileCooldown',      value: 'tileCooldownValue',      type: 'int',   min: 0,   max: 10  },
+      internBiasChance:   { el: 'cfgInternBiasChance',  value: 'internBiasChanceValue',  type: 'float', min: 0,   max: 1,   decimals: 2 },
+      confettiChance:     { el: 'cfgConfettiChance',    value: 'confettiChanceValue',    type: 'float', min: 0,   max: 1,   decimals: 2 },
+      narratorRate:       { el: 'cfgNarratorRate',      value: 'narratorRateValue',      type: 'float', min: 0.5, max: 1.5, decimals: 2 },
+      narratorPitch:      { el: 'cfgNarratorPitch',     value: 'narratorPitchValue',     type: 'float', min: 0.5, max: 1.5, decimals: 2 },
+      personEmoji:        { el: 'cfgPersonEmoji',       type: 'string', maxLength: 4 },
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function loadConfig() {
+      try {
+        const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        for (const key of Object.keys(CONFIG_DEFAULTS)) {
+          if (parsed[key] === undefined) continue;
+          const spec = CONFIG_SCHEMA[key];
+          if (spec.type === 'int')        config[key] = clamp(Math.round(Number(parsed[key])), spec.min, spec.max);
+          else if (spec.type === 'float') config[key] = clamp(Number(parsed[key]), spec.min, spec.max);
+          else if (spec.type === 'string') {
+            const str = String(parsed[key]).slice(0, spec.maxLength);
+            if (str.length > 0) config[key] = str;
+          }
+        }
+      } catch (_) {
+        // Corrupt storage — silently fall back to defaults.
+      }
+    }
+
+    function saveConfig() {
+      try {
+        localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+      } catch (_) {
+        // Storage may be disabled; changes stay in-memory.
+      }
+    }
 
     function randomFrom(arr) {
       return arr[Math.floor(Math.random() * arr.length)];
@@ -436,8 +617,8 @@
       if (!narratorMode.checked || !('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 0.95;
-      utter.pitch = 0.85;
+      utter.rate = config.narratorRate;
+      utter.pitch = config.narratorPitch;
       window.speechSynthesis.speak(utter);
     }
 
@@ -490,7 +671,7 @@
       const nextTurn = jumpCount + 1;
       return zones.filter((zoneEl) => {
         const index = Number(zoneEl.dataset.index);
-        return nextTurn - lastLandedTurnByIndex[index] >= tileCooldownTurns;
+        return nextTurn - lastLandedTurnByIndex[index] >= config.tileCooldownTurns;
       });
     }
 
@@ -501,7 +682,7 @@
 
       if (internBiasMode.checked) {
         const internZone = landingPool.find((zoneEl) => Number(zoneEl.dataset.index) === internIndex);
-        if (internZone && Math.random() < 0.65) return internZone;
+        if (internZone && Math.random() < config.internBiasChance) return internZone;
       }
 
       return randomFrom(landingPool);
@@ -534,7 +715,7 @@
 
       // Quick hop animation across random zones before landing
       let hops = 0;
-      const totalHops = (chaosMode.checked ? 9 : 5) + Math.floor(Math.random() * 4);
+      const totalHops = (chaosMode.checked ? config.hopCountBase + 4 : config.hopCountBase) + Math.floor(Math.random() * 4);
 
       await new Promise((resolve) => {
         const hopInterval = setInterval(() => {
@@ -561,7 +742,7 @@
             narrate(selectedText);
             applyChaosShake();
 
-            if (Math.random() < 0.18 || picked === lastPicked) {
+            if (Math.random() < config.confettiChance || picked === lastPicked) {
               burstConfetti();
             }
             lastPicked = picked;
@@ -574,7 +755,7 @@
               resolve();
             }, 150);
           }
-        }, 100);
+        }, config.hopIntervalMs);
       });
 
       isJumping = false;
@@ -651,6 +832,60 @@
     customConclusionInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') addCustomBtn.click();
     });
+
+    function formatConfigValue(key) {
+      const spec = CONFIG_SCHEMA[key];
+      const raw = config[key];
+      if (spec.type === 'int') return String(raw);
+      if (spec.type === 'float') return raw.toFixed(spec.decimals ?? 2);
+      return raw;
+    }
+
+    function renderConfigInputs() {
+      for (const [key, spec] of Object.entries(CONFIG_SCHEMA)) {
+        const input = document.getElementById(spec.el);
+        if (!input) continue;
+        input.value = config[key];
+        if (spec.value) {
+          const label = document.getElementById(spec.value);
+          if (label) label.textContent = formatConfigValue(key);
+        }
+      }
+      person.textContent = config.personEmoji;
+    }
+
+    function bindConfigInputs() {
+      for (const [key, spec] of Object.entries(CONFIG_SCHEMA)) {
+        const input = document.getElementById(spec.el);
+        if (!input) continue;
+        input.addEventListener('input', () => {
+          if (spec.type === 'int') {
+            config[key] = clamp(Math.round(Number(input.value)), spec.min, spec.max);
+          } else if (spec.type === 'float') {
+            config[key] = clamp(Number(input.value), spec.min, spec.max);
+          } else {
+            const trimmed = input.value.slice(0, spec.maxLength);
+            config[key] = trimmed.length > 0 ? trimmed : CONFIG_DEFAULTS[key];
+          }
+          if (spec.value) {
+            const label = document.getElementById(spec.value);
+            if (label) label.textContent = formatConfigValue(key);
+          }
+          if (key === 'personEmoji') person.textContent = config.personEmoji;
+          saveConfig();
+        });
+      }
+    }
+
+    document.getElementById('restoreDefaultsBtn').addEventListener('click', () => {
+      Object.assign(config, CONFIG_DEFAULTS);
+      try { localStorage.removeItem(CONFIG_STORAGE_KEY); } catch (_) {}
+      renderConfigInputs();
+    });
+
+    loadConfig();
+    renderConfigInputs();
+    bindConfigInputs();
   </script>
 </body>
 </html>
