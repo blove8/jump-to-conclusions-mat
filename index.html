@@ -627,9 +627,11 @@
       const unlockClass = audioUnlocked ? 'ok' : 'warn';
       const speechHas = 'speechSynthesis' in window;
       const speechClass = speechPrimed ? 'ok' : (speechHas ? 'warn' : 'bad');
+      const silentClass = silentPlayed ? 'ok' : 'warn';
       const parts = [
         `ctx:<span class="${ctxClass}">${ctxState}</span>`,
         `unlocked:<span class="${unlockClass}">${audioUnlocked}</span>`,
+        `silent:<span class="${silentClass}">${silentPlayed ? 'played' : 'no'}</span>`,
         `speech:<span class="${speechClass}">${speechPrimed ? 'primed' : (speechHas ? 'idle' : 'n/a')}</span>`,
       ];
       if (lastBoingAttempt) parts.push(`boing:${lastBoingAttempt}`);
@@ -648,7 +650,34 @@
     // iOS Safari requires the AudioContext to be resumed AND to play a real
     // (even silent) buffer inside a user gesture before later scheduled audio
     // plays. `speechSynthesis` similarly needs to be primed in-gesture.
+    // A 0.1s silent WAV. Playing this via HTMLAudio inside a user gesture
+    // flips iOS Safari's audio session category to "playback" so WebAudio
+    // is no longer muted by the physical ringer/silent switch.
+    const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    let silentAudioEl = null;
+    let silentPlayed = false;
+
+    function primeSilentAudioSession() {
+      if (silentPlayed) return;
+      try {
+        if (!silentAudioEl) {
+          silentAudioEl = new Audio(SILENT_WAV);
+          silentAudioEl.loop = false;
+          silentAudioEl.preload = 'auto';
+          silentAudioEl.muted = false;
+          silentAudioEl.volume = 0.01;
+        }
+        const playPromise = silentAudioEl.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.then(() => { silentPlayed = true; renderAudioDiag(); }).catch(() => {});
+        } else {
+          silentPlayed = true;
+        }
+      } catch (_) {}
+    }
+
     function primeAudio() {
+      primeSilentAudioSession();
       const ctx = getAudioCtx();
       if (ctx) {
         if (ctx.state === 'suspended') ctx.resume().then(renderAudioDiag).catch(() => {});
@@ -690,7 +719,7 @@
         osc.frequency.setValueAtTime(280, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.2);
 
-        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
 
         osc.connect(gain);
