@@ -598,6 +598,9 @@
     }
 
     let sharedAudioCtx = null;
+    let audioUnlocked = false;
+    let speechPrimed = false;
+
     function getAudioCtx() {
       if (sharedAudioCtx) return sharedAudioCtx;
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -606,14 +609,35 @@
       return sharedAudioCtx;
     }
 
-    // iOS/Android browsers require the AudioContext to be resumed during a
-    // user gesture before any audio will play. Prime it once on first input.
-    function unlockAudio() {
+    // iOS Safari requires the AudioContext to be resumed AND to play a real
+    // (even silent) buffer inside a user gesture before later scheduled audio
+    // plays. `speechSynthesis` similarly needs to be primed in-gesture.
+    function primeAudio() {
       const ctx = getAudioCtx();
-      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      if (ctx) {
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        if (!audioUnlocked) {
+          try {
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+            audioUnlocked = true;
+          } catch (_) {}
+        }
+      }
+      if (!speechPrimed && 'speechSynthesis' in window) {
+        try {
+          const warmup = new SpeechSynthesisUtterance('');
+          warmup.volume = 0;
+          window.speechSynthesis.speak(warmup);
+          speechPrimed = true;
+        } catch (_) {}
+      }
     }
-    ['pointerdown', 'touchstart', 'keydown'].forEach((evt) => {
-      window.addEventListener(evt, unlockAudio, { once: true, passive: true });
+    ['pointerdown', 'touchstart', 'click', 'keydown'].forEach((evt) => {
+      window.addEventListener(evt, primeAudio, { capture: true, passive: true });
     });
 
     function playBoing() {
@@ -643,6 +667,7 @@
 
     function narrate(text) {
       if (!narratorMode.checked || !('speechSynthesis' in window)) return;
+      try { window.speechSynthesis.resume(); } catch (_) {}
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.rate = config.narratorRate;
