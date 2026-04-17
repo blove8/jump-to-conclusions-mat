@@ -933,6 +933,13 @@
       const zones = Array.from(mat.querySelectorAll('.zone'));
       const landedZone = chooseLandingZone(zones);
       const picked = Number(landedZone.dataset.index);
+      const selectedText = conclusions[picked].replace(/\n/g, ' ');
+
+      // Speak NOW while we're still inside the user-gesture call stack.
+      // iOS Safari blocks speechSynthesis.speak() outside a gesture, so
+      // deferring this to after the hop animation (as before) silently
+      // queued without starting.
+      narrate(selectedText);
 
       // Quick hop animation across random zones before landing
       let hops = 0;
@@ -955,12 +962,10 @@
             blameCounts[picked] += 1;
             landedZone.dataset.hit = String(blameCounts[picked]);
 
-            const selectedText = conclusions[picked].replace(/\n/g, ' ');
             conclusionLabel.textContent = 'You have concluded:';
             conclusionText.textContent = selectedText;
 
             playBoing();
-            narrate(selectedText);
             applyChaosShake();
 
             if (Math.random() < config.confettiChance || picked === lastPicked) {
