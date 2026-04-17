@@ -597,12 +597,31 @@
       statsLine.textContent = `Most blamed zone: ${hottestLabel} (${maxHits} hits)`;
     }
 
+    let sharedAudioCtx = null;
+    function getAudioCtx() {
+      if (sharedAudioCtx) return sharedAudioCtx;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      try { sharedAudioCtx = new AudioCtx(); } catch (_) { return null; }
+      return sharedAudioCtx;
+    }
+
+    // iOS/Android browsers require the AudioContext to be resumed during a
+    // user gesture before any audio will play. Prime it once on first input.
+    function unlockAudio() {
+      const ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    }
+    ['pointerdown', 'touchstart', 'keydown'].forEach((evt) => {
+      window.addEventListener(evt, unlockAudio, { once: true, passive: true });
+    });
+
     function playBoing() {
       if (!soundMode.checked) return;
+      const audioCtx = getAudioCtx();
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
       try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const audioCtx = new AudioCtx();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
@@ -617,7 +636,6 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.22);
-        osc.addEventListener('ended', () => audioCtx.close(), { once: true });
       } catch (_) {
         // Ignore audio failures on locked-down browsers.
       }
