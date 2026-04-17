@@ -382,6 +382,13 @@
       justify-content: flex-end;
     }
 
+    .config-panel .feature-panel {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-top: 0.85rem;
+    }
+
     footer {
       margin-top: 3rem;
       font-size: 0.72rem;
@@ -411,19 +418,22 @@
       <button class="btn-secondary" id="resetBtn">RESET STATS</button>
     </div>
 
-    <div class="feature-panel">
-      <div class="feature-grid">
-        <label class="feature-line"><input type="checkbox" id="chaosMode"> Chaos Mode (extra wild hops)</label>
-        <label class="feature-line"><input type="checkbox" id="narratorMode"> Narrator Mode (reads conclusion)</label>
-        <label class="feature-line"><input type="checkbox" id="soundMode" checked> Boing Sound FX</label>
-        <label class="feature-line"><input type="checkbox" id="internBiasMode"> Intern Blame Bias</label>
+    <details class="config-panel" id="settingsPanel">
+      <summary>Settings</summary>
+      <div class="feature-panel">
+        <div class="feature-grid">
+          <label class="feature-line"><input type="checkbox" id="chaosMode"> Chaos Mode (extra wild hops)</label>
+          <label class="feature-line"><input type="checkbox" id="narratorMode"> Narrator Mode (reads conclusion)</label>
+          <label class="feature-line"><input type="checkbox" id="soundMode" checked> Boing Sound FX</label>
+          <label class="feature-line"><input type="checkbox" id="internBiasMode"> Intern Blame Bias</label>
+        </div>
+        <div class="custom-add">
+          <input id="customConclusionInput" maxlength="40" placeholder="Add a custom dumb conclusion..." aria-label="Custom conclusion">
+          <button class="btn-secondary" id="addCustomBtn">ADD TO MAT</button>
+        </div>
+        <div class="status-line" id="statsLine"></div>
       </div>
-      <div class="custom-add">
-        <input id="customConclusionInput" maxlength="40" placeholder="Add a custom dumb conclusion..." aria-label="Custom conclusion">
-        <button class="btn-secondary" id="addCustomBtn">ADD TO MAT</button>
-      </div>
-      <div class="status-line" id="statsLine"></div>
-    </div>
+    </details>
 
     <details class="config-panel" id="configPanel">
       <summary>Config</summary>
@@ -587,12 +597,31 @@
       statsLine.textContent = `Most blamed zone: ${hottestLabel} (${maxHits} hits)`;
     }
 
+    let sharedAudioCtx = null;
+    function getAudioCtx() {
+      if (sharedAudioCtx) return sharedAudioCtx;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      try { sharedAudioCtx = new AudioCtx(); } catch (_) { return null; }
+      return sharedAudioCtx;
+    }
+
+    // iOS/Android browsers require the AudioContext to be resumed during a
+    // user gesture before any audio will play. Prime it once on first input.
+    function unlockAudio() {
+      const ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    }
+    ['pointerdown', 'touchstart', 'keydown'].forEach((evt) => {
+      window.addEventListener(evt, unlockAudio, { once: true, passive: true });
+    });
+
     function playBoing() {
       if (!soundMode.checked) return;
+      const audioCtx = getAudioCtx();
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
       try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const audioCtx = new AudioCtx();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
@@ -607,7 +636,6 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.22);
-        osc.addEventListener('ended', () => audioCtx.close(), { once: true });
       } catch (_) {
         // Ignore audio failures on locked-down browsers.
       }
