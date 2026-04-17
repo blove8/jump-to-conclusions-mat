@@ -382,6 +382,13 @@
       justify-content: flex-end;
     }
 
+    .config-panel .feature-panel {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-top: 0.85rem;
+    }
+
     footer {
       margin-top: 3rem;
       font-size: 0.72rem;
@@ -411,19 +418,22 @@
       <button class="btn-secondary" id="resetBtn">RESET STATS</button>
     </div>
 
-    <div class="feature-panel">
-      <div class="feature-grid">
-        <label class="feature-line"><input type="checkbox" id="chaosMode"> Chaos Mode (extra wild hops)</label>
-        <label class="feature-line"><input type="checkbox" id="narratorMode"> Narrator Mode (reads conclusion)</label>
-        <label class="feature-line"><input type="checkbox" id="soundMode" checked> Boing Sound FX</label>
-        <label class="feature-line"><input type="checkbox" id="internBiasMode"> Intern Blame Bias</label>
+    <details class="config-panel" id="settingsPanel">
+      <summary>Settings</summary>
+      <div class="feature-panel">
+        <div class="feature-grid">
+          <label class="feature-line"><input type="checkbox" id="chaosMode"> Chaos Mode (extra wild hops)</label>
+          <label class="feature-line"><input type="checkbox" id="narratorMode"> Narrator Mode (reads conclusion)</label>
+          <label class="feature-line"><input type="checkbox" id="soundMode" checked> Boing Sound FX</label>
+          <label class="feature-line"><input type="checkbox" id="internBiasMode"> Intern Blame Bias</label>
+        </div>
+        <div class="custom-add">
+          <input id="customConclusionInput" maxlength="40" placeholder="Add a custom dumb conclusion..." aria-label="Custom conclusion">
+          <button class="btn-secondary" id="addCustomBtn">ADD TO MAT</button>
+        </div>
+        <div class="status-line" id="statsLine"></div>
       </div>
-      <div class="custom-add">
-        <input id="customConclusionInput" maxlength="40" placeholder="Add a custom dumb conclusion..." aria-label="Custom conclusion">
-        <button class="btn-secondary" id="addCustomBtn">ADD TO MAT</button>
-      </div>
-      <div class="status-line" id="statsLine"></div>
-    </div>
+    </details>
 
     <details class="config-panel" id="configPanel">
       <summary>Config</summary>
