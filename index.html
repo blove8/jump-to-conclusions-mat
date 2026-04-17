@@ -92,6 +92,16 @@
       animation: pulse-ring 0.6s ease-out forwards;
     }
 
+    .zone::before {
+      content: attr(data-hit);
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-size: 0.62rem;
+      color: rgba(0, 0, 0, 0.55);
+      font-weight: bold;
+    }
+
     @keyframes pulse-ring {
       from { opacity: 1; transform: scale(0.5); }
       to   { opacity: 0; transform: scale(1.5); }
@@ -101,8 +111,7 @@
       position: absolute;
       font-size: 2.2rem;
       pointer-events: none;
-      transition: left 0.5s cubic-bezier(0.22,1,0.36,1),
-                  top  0.5s cubic-bezier(0.22,1,0.36,1);
+      transition: left 0.5s cubic-bezier(0.22,1,0.36,1), top  0.5s cubic-bezier(0.22,1,0.36,1);
       z-index: 10;
       filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
       transform: translate(-35%, -80%);
@@ -124,6 +133,15 @@
       flex-direction: column;
       align-items: center;
       gap: 1rem;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .btn-jump {
@@ -144,6 +162,68 @@
     .btn-jump:hover { background: #ffd34d; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,200,66,0.5); }
     .btn-jump:active { transform: translateY(1px); box-shadow: 0 2px 8px rgba(245,200,66,0.3); }
     .btn-jump:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: #c18f39;
+      color: #1a1a2e;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1.1rem;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(193,143,57,0.35);
+    }
+
+    .btn-secondary:hover { filter: brightness(1.06); }
+    .btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .feature-panel {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 0.85rem;
+      width: 100%;
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .feature-line {
+      font-size: 0.85rem;
+      color: #ddd;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .custom-add {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .custom-add input {
+      flex: 1;
+      min-width: 220px;
+      border: 1px solid #7d6f4d;
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+      background: #231a0f;
+      color: #f3e5c4;
+    }
+
+    .status-line {
+      font-size: 0.8rem;
+      color: #9ea4bf;
+      text-align: center;
+      min-height: 1.2em;
+    }
 
     .conclusion-display {
       min-height: 80px;
@@ -184,6 +264,39 @@
       margin-top: 0.5rem;
     }
 
+    .mat-wrapper.chaos-shake {
+      animation: chaos-shake 0.22s linear 2;
+    }
+
+    @keyframes chaos-shake {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(1px, -1px) rotate(-1deg); }
+      50% { transform: translate(-1px, 1px) rotate(1deg); }
+      75% { transform: translate(1px, 1px) rotate(0deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    .confetti-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      top: -12px;
+      width: 8px;
+      height: 14px;
+      border-radius: 2px;
+      animation: confetti-fall 1.3s ease-out forwards;
+    }
+
+    @keyframes confetti-fall {
+      from { opacity: 1; transform: translateY(0) rotate(0deg); }
+      to { opacity: 0; transform: translateY(220px) rotate(320deg); }
+    }
+
     footer {
       margin-top: 3rem;
       font-size: 0.72rem;
@@ -196,17 +309,37 @@
 <body>
 
   <h1>Jump to Conclusions Mat™</h1>
-  <p class="tagline">"You could jump to a conclusion!" — Tom Smykowski</p>
+  <p class="tagline">"You could jump to a conclusion!" - Tom Smykowski</p>
 
   <div class="mat-wrapper">
     <div class="mat" id="mat">
       <!-- zones injected by JS -->
     </div>
     <div class="person" id="person">🧍</div>
+    <div class="confetti-layer" id="confettiLayer"></div>
   </div>
 
   <div class="controls">
-    <button class="btn-jump" id="jumpBtn">JUMP!</button>
+    <div class="button-row">
+      <button class="btn-jump" id="jumpBtn">JUMP!</button>
+      <button class="btn-secondary" id="autoFiveBtn">AUTO x5</button>
+      <button class="btn-secondary" id="resetBtn">RESET STATS</button>
+    </div>
+
+    <div class="feature-panel">
+      <div class="feature-grid">
+        <label class="feature-line"><input type="checkbox" id="chaosMode"> Chaos Mode (extra wild hops)</label>
+        <label class="feature-line"><input type="checkbox" id="narratorMode"> Narrator Mode (reads conclusion)</label>
+        <label class="feature-line"><input type="checkbox" id="soundMode" checked> Boing Sound FX</label>
+        <label class="feature-line"><input type="checkbox" id="internBiasMode"> Intern Blame Bias</label>
+      </div>
+      <div class="custom-add">
+        <input id="customConclusionInput" maxlength="40" placeholder="Add a custom dumb conclusion..." aria-label="Custom conclusion">
+        <button class="btn-secondary" id="addCustomBtn">ADD TO MAT</button>
+      </div>
+      <div class="status-line" id="statsLine"></div>
+    </div>
+
     <div class="conclusion-display">
       <div class="conclusion-label" id="conclusionLabel"></div>
       <div class="conclusion-text" id="conclusionText" aria-live="polite" aria-atomic="true"></div>
@@ -214,7 +347,7 @@
     </div>
   </div>
 
-  <footer>Patent Pending · Initech R&amp;D Division · Est. 1999</footer>
+  <footer>Patent Pending - Initech R&amp;D Division - Est. 1999</footer>
 
   <script>
     const conclusions = [
@@ -233,25 +366,105 @@
     ];
 
     const mat = document.getElementById('mat');
+    const matWrapper = document.querySelector('.mat-wrapper');
     const person = document.getElementById('person');
+    const confettiLayer = document.getElementById('confettiLayer');
     const jumpBtn = document.getElementById('jumpBtn');
+    const autoFiveBtn = document.getElementById('autoFiveBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const chaosMode = document.getElementById('chaosMode');
+    const narratorMode = document.getElementById('narratorMode');
+    const soundMode = document.getElementById('soundMode');
+    const internBiasMode = document.getElementById('internBiasMode');
+    const customConclusionInput = document.getElementById('customConclusionInput');
+    const addCustomBtn = document.getElementById('addCustomBtn');
+    const statsLine = document.getElementById('statsLine');
     const conclusionText = document.getElementById('conclusionText');
     const conclusionLabel = document.getElementById('conclusionLabel');
     const jumpCountEl = document.getElementById('jumpCount');
 
     let jumpCount = 0;
     let currentZone = null;
+    let lastPicked = -1;
+    let isJumping = false;
     const tileCooldownTurns = 3;
     const lastLandedTurnByIndex = new Array(conclusions.length).fill(-Infinity);
+    const blameCounts = new Array(conclusions.length).fill(0);
+
+    function randomFrom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function updateStatsLine() {
+      const maxHits = Math.max(...blameCounts);
+      if (maxHits <= 0) {
+        statsLine.textContent = 'No hot takes yet. Jump to begin your legacy.';
+        return;
+      }
+      const hottestIndex = blameCounts.findIndex((value) => value === maxHits);
+      const hottestLabel = conclusions[hottestIndex].replace(/\n/g, ' ');
+      statsLine.textContent = `Most blamed zone: ${hottestLabel} (${maxHits} hits)`;
+    }
+
+    function playBoing() {
+      if (!soundMode.checked) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const audioCtx = new AudioCtx();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.2);
+
+        gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.22);
+        osc.addEventListener('ended', () => audioCtx.close(), { once: true });
+      } catch (_) {
+        // Ignore audio failures on locked-down browsers.
+      }
+    }
+
+    function narrate(text) {
+      if (!narratorMode.checked || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 0.95;
+      utter.pitch = 0.85;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function burstConfetti() {
+      const colors = ['#f5c842', '#ff6b6b', '#64dfdf', '#f78da7', '#c3f584'];
+      for (let i = 0; i < 18; i++) {
+        const piece = document.createElement('span');
+        piece.className = 'confetti-piece';
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = randomFrom(colors);
+        piece.style.animationDelay = `${Math.random() * 0.2}s`;
+        piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+        confettiLayer.appendChild(piece);
+        setTimeout(() => piece.remove(), 1500);
+      }
+    }
 
     // Build zones
     conclusions.forEach((text, i) => {
       const zone = document.createElement('div');
       zone.className = 'zone';
       zone.dataset.index = i;
+      zone.dataset.hit = '';
       zone.textContent = text;
       mat.appendChild(zone);
     });
+    updateStatsLine();
 
     function getZoneLandingPosition(zoneEl) {
       const matRect = mat.getBoundingClientRect();
@@ -273,13 +486,109 @@
       }
     }
 
-    function getEligibleLandingZones() {
+    function getEligibleLandingZones(zones) {
       const nextTurn = jumpCount + 1;
-      const zones = Array.from(mat.querySelectorAll('.zone'));
       return zones.filter((zoneEl) => {
         const index = Number(zoneEl.dataset.index);
         return nextTurn - lastLandedTurnByIndex[index] >= tileCooldownTurns;
       });
+    }
+
+    function chooseLandingZone(zones) {
+      const eligibleZones = getEligibleLandingZones(zones);
+      const landingPool = eligibleZones.length > 0 ? eligibleZones : zones;
+      const internIndex = 2;
+
+      if (internBiasMode.checked) {
+        const internZone = landingPool.find((zoneEl) => Number(zoneEl.dataset.index) === internIndex);
+        if (internZone && Math.random() < 0.65) return internZone;
+      }
+
+      return randomFrom(landingPool);
+    }
+
+    function setJumpControlsDisabled(disabled) {
+      jumpBtn.disabled = disabled;
+      autoFiveBtn.disabled = disabled;
+    }
+
+    function applyChaosShake() {
+      if (!chaosMode.checked) return;
+      matWrapper.classList.remove('chaos-shake');
+      void matWrapper.offsetWidth;
+      matWrapper.classList.add('chaos-shake');
+    }
+
+    async function runJump(keepControlsDisabled = false) {
+      if (isJumping) return;
+      isJumping = true;
+      setJumpControlsDisabled(true);
+
+      // Clear previous active
+      if (currentZone) currentZone.classList.remove('active');
+      conclusionText.classList.remove('visible');
+
+      const zones = Array.from(mat.querySelectorAll('.zone'));
+      const landedZone = chooseLandingZone(zones);
+      const picked = Number(landedZone.dataset.index);
+
+      // Quick hop animation across random zones before landing
+      let hops = 0;
+      const totalHops = (chaosMode.checked ? 9 : 5) + Math.floor(Math.random() * 4);
+
+      await new Promise((resolve) => {
+        const hopInterval = setInterval(() => {
+          const tempZone = randomFrom(zones);
+          placePerson(tempZone, hops % 2 === 0);
+          hops++;
+          if (hops >= totalHops) {
+            clearInterval(hopInterval);
+
+            // Final landing
+            placePerson(landedZone, true);
+            landedZone.classList.add('active');
+            currentZone = landedZone;
+            jumpCount++;
+            lastLandedTurnByIndex[picked] = jumpCount;
+            blameCounts[picked] += 1;
+            landedZone.dataset.hit = String(blameCounts[picked]);
+
+            const selectedText = conclusions[picked].replace(/\n/g, ' ');
+            conclusionLabel.textContent = 'You have concluded:';
+            conclusionText.textContent = selectedText;
+
+            playBoing();
+            narrate(selectedText);
+            applyChaosShake();
+
+            if (Math.random() < 0.18 || picked === lastPicked) {
+              burstConfetti();
+            }
+            lastPicked = picked;
+
+            setTimeout(() => {
+              conclusionText.classList.add('visible');
+              jumpCountEl.textContent = `${jumpCount} conclusion${jumpCount !== 1 ? 's' : ''} jumped to`;
+              jumpBtn.textContent = 'JUMP AGAIN!';
+              updateStatsLine();
+              resolve();
+            }, 150);
+          }
+        }, 100);
+      });
+
+      isJumping = false;
+      if (!keepControlsDisabled) setJumpControlsDisabled(false);
+    }
+
+    async function runAutoJumps(times) {
+      if (isJumping) return;
+      setJumpControlsDisabled(true);
+      for (let i = 0; i < times; i++) {
+        await runJump(true);
+        await new Promise((resolve) => setTimeout(resolve, 180));
+      }
+      setJumpControlsDisabled(false);
     }
 
     // Start person on first zone without animation
@@ -295,46 +604,52 @@
     });
 
     jumpBtn.addEventListener('click', () => {
-      jumpBtn.disabled = true;
+      runJump(false);
+    });
 
-      // Clear previous active
-      if (currentZone) currentZone.classList.remove('active');
+    autoFiveBtn.addEventListener('click', () => {
+      runAutoJumps(5);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      jumpCount = 0;
+      lastPicked = -1;
+      for (let i = 0; i < conclusions.length; i++) {
+        lastLandedTurnByIndex[i] = -Infinity;
+        blameCounts[i] = 0;
+      }
+      mat.querySelectorAll('.zone').forEach((zone) => {
+        zone.classList.remove('active');
+        zone.dataset.hit = '';
+      });
+      currentZone = null;
+      conclusionLabel.textContent = '';
+      conclusionText.textContent = '';
       conclusionText.classList.remove('visible');
+      jumpCountEl.textContent = '';
+      jumpBtn.textContent = 'JUMP!';
+      updateStatsLine();
 
-      const zones = mat.querySelectorAll('.zone');
-      const eligibleZones = getEligibleLandingZones();
-      const landingPool = eligibleZones.length > 0 ? eligibleZones : Array.from(zones);
-      const landedZone = landingPool[Math.floor(Math.random() * landingPool.length)];
-      const picked = Number(landedZone.dataset.index);
+      const firstZone = mat.querySelector('.zone');
+      if (firstZone) placePerson(firstZone, false);
+    });
 
-      // Quick hop animation across random zones before landing
-      let hops = 0;
-      const totalHops = 5 + Math.floor(Math.random() * 4);
-      const hopInterval = setInterval(() => {
-        const tempZone = zones[Math.floor(Math.random() * zones.length)];
-        placePerson(tempZone, hops % 2 === 0);
-        hops++;
-        if (hops >= totalHops) {
-          clearInterval(hopInterval);
+    addCustomBtn.addEventListener('click', () => {
+      const customText = customConclusionInput.value.trim();
+      if (!customText) return;
+      const indexToReplace = Math.floor(Math.random() * conclusions.length);
+      conclusions[indexToReplace] = customText;
+      const zone = mat.querySelector(`.zone[data-index="${indexToReplace}"]`);
+      if (zone) zone.textContent = customText;
+      customConclusionInput.value = '';
+      updateStatsLine();
+      conclusionLabel.textContent = 'Mat mutation:';
+      conclusionText.textContent = `Replaced zone ${indexToReplace + 1} with your custom conclusion.`;
+      conclusionText.classList.add('visible');
+    });
 
-          // Final landing
-          placePerson(landedZone, true);
-          landedZone.classList.add('active');
-          currentZone = landedZone;
-          jumpCount++;
-          lastLandedTurnByIndex[picked] = jumpCount;
-
-          conclusionLabel.textContent = 'You have concluded:';
-          conclusionText.textContent = conclusions[picked].replace(/\n/g, ' ');
-
-          setTimeout(() => {
-            conclusionText.classList.add('visible');
-            jumpCountEl.textContent = `${jumpCount} conclusion${jumpCount !== 1 ? 's' : ''} jumped to`;
-            jumpBtn.textContent = 'JUMP AGAIN!';
-            jumpBtn.disabled = false;
-          }, 150);
-        }
-      }, 100);
+    customConclusionInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') addCustomBtn.click();
     });
   </script>
 </body>
