@@ -628,11 +628,14 @@
       const speechHas = 'speechSynthesis' in window;
       const speechClass = speechPrimed ? 'ok' : (speechHas ? 'warn' : 'bad');
       const silentClass = silentPlayed ? 'ok' : 'warn';
+      const voiceCount = speechHas ? (window.speechSynthesis.getVoices() || []).length : 0;
+      const voicesClass = voiceCount > 0 ? 'ok' : 'warn';
       const parts = [
         `ctx:<span class="${ctxClass}">${ctxState}</span>`,
         `unlocked:<span class="${unlockClass}">${audioUnlocked}</span>`,
         `silent:<span class="${silentClass}">${silentPlayed ? 'played' : 'no'}</span>`,
         `speech:<span class="${speechClass}">${speechPrimed ? 'primed' : (speechHas ? 'idle' : 'n/a')}</span>`,
+        `voices:<span class="${voicesClass}">${voiceCount}</span>`,
       ];
       if (lastBoingAttempt) parts.push(`boing:${lastBoingAttempt}`);
       if (lastSpeakAttempt) parts.push(`spoke:${lastSpeakAttempt}`);
@@ -650,10 +653,32 @@
     // iOS Safari requires the AudioContext to be resumed AND to play a real
     // (even silent) buffer inside a user gesture before later scheduled audio
     // plays. `speechSynthesis` similarly needs to be primed in-gesture.
-    // A 0.1s silent WAV. Playing this via HTMLAudio inside a user gesture
-    // flips iOS Safari's audio session category to "playback" so WebAudio
-    // is no longer muted by the physical ringer/silent switch.
-    const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    // Build a valid silent WAV data URI on the fly (0.05s mono 44.1kHz).
+    // Used via HTMLAudio on first gesture to upgrade iOS Safari's audio
+    // session so WebAudio ignores the physical ringer/silent switch.
+    function buildSilentWavDataUri() {
+      const samples = 2205; // 0.05s at 44100Hz
+      const byteLen = 44 + samples * 2;
+      const bytes = new Uint8Array(byteLen);
+      const view = new DataView(bytes.buffer);
+      view.setUint32(0, 0x52494646, false);
+      view.setUint32(4, 36 + samples * 2, true);
+      view.setUint32(8, 0x57415645, false);
+      view.setUint32(12, 0x666d7420, false);
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, 44100, true);
+      view.setUint32(28, 44100 * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      view.setUint32(36, 0x64617461, false);
+      view.setUint32(40, samples * 2, true);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return 'data:audio/wav;base64,' + btoa(bin);
+    }
+    const SILENT_WAV = buildSilentWavDataUri();
     let silentAudioEl = null;
     let silentPlayed = false;
 
@@ -694,18 +719,23 @@
       }
       if (!speechPrimed && 'speechSynthesis' in window) {
         try {
-          // iOS ignores empty/volume-0 warmups and requires a real utterance
-          // inside a user gesture to unlock the speech engine.
-          const warmup = new SpeechSynthesisUtterance(' ');
+          // iOS ignores empty/whitespace warmups — use a real short word
+          // at near-silent volume to actually unlock the speech engine.
+          const warmup = new SpeechSynthesisUtterance('go');
           warmup.volume = 0.01;
           warmup.rate = 1;
+          const v = pickEnglishVoice();
+          if (v) warmup.voice = v;
           window.speechSynthesis.speak(warmup);
           speechPrimed = true;
-          // Voices may populate async on iOS/Chrome; get() triggers the load.
+          // Voices populate async on iOS/Chrome; getVoices() triggers load.
           window.speechSynthesis.getVoices();
         } catch (_) {}
       }
       renderAudioDiag();
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener?.('voiceschanged', renderAudioDiag);
     }
     ['pointerdown', 'touchstart', 'click', 'keydown'].forEach((evt) => {
       window.addEventListener(evt, primeAudio, { capture: true, passive: true });
