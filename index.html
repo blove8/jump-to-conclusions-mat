@@ -341,12 +341,12 @@
 
     .person {
       position: absolute;
-      font-size: 1.6rem;
+      font-size: 1.95rem;
       pointer-events: none;
       transition: left 0.45s var(--ease-spring), top 0.45s var(--ease-spring);
       z-index: 10;
       filter: drop-shadow(0 4px 6px rgba(0,0,0,0.55));
-      transform: translate(-50%, -100%);
+      transform: translate(0, 0);
     }
 
     .person.jumping {
@@ -354,9 +354,9 @@
     }
 
     @keyframes jump-anim {
-      0%   { transform: translate(-50%, -100%) scale(1); }
-      40%  { transform: translate(-50%, calc(-100% - 32px)) scale(1.2) rotate(-8deg); }
-      100% { transform: translate(-50%, -100%) scale(1); }
+      0%   { transform: translate(0, 0) scale(1); }
+      40%  { transform: translate(0, -32px) scale(1.2) rotate(-8deg); }
+      100% { transform: translate(0, 0) scale(1); }
     }
 
     .controls {
@@ -1448,8 +1448,8 @@
       const matRect = mat.getBoundingClientRect();
       const zoneRect = zoneEl.getBoundingClientRect();
       return {
-        x: zoneRect.left - matRect.left + zoneRect.width / 2,
-        y: zoneRect.top  - matRect.top  + zoneRect.height - 6,
+        x: zoneRect.left - matRect.left + 4,
+        y: zoneRect.top  - matRect.top  + 4,
       };
     }
 
