@@ -945,7 +945,9 @@
 
   <header class="hero">
     <span class="kicker"><span class="kicker-dot"></span>Initech Decision Engine · v1.99</span>
-    <h1>Jump<br>to Conclusions<span class="trademark">MAT™</span></h1>
+    <h1 aria-label="Jump to Conclusions Mat">
+      <span aria-hidden="true">Jump<br>to Conclusions<span class="trademark">MAT™</span></span>
+    </h1>
     <p class="tagline">
       "You could jump to a conclusion!"
       <cite>— T. Smykowski, R&amp;D</cite>
@@ -1023,36 +1025,36 @@
     <div class="sheet-body">
       <div class="config-body">
         <div class="config-row">
-          <label>Hop count base <span class="config-value" id="hopCountBaseValue"></span></label>
-          <input type="range" id="cfgHopCountBase" min="1" max="20" step="1">
+          <label for="cfgHopCountBase">Hop count base <span class="config-value" id="hopCountBaseValue"></span></label>
+          <input type="range" id="cfgHopCountBase" min="1" max="20" step="1" aria-label="Hop count base">
         </div>
         <div class="config-row">
-          <label>Hop interval (ms) <span class="config-value" id="hopIntervalValue"></span></label>
-          <input type="range" id="cfgHopInterval" min="30" max="300" step="10">
+          <label for="cfgHopInterval">Hop interval (ms) <span class="config-value" id="hopIntervalValue"></span></label>
+          <input type="range" id="cfgHopInterval" min="30" max="300" step="10" aria-label="Hop interval in milliseconds">
         </div>
         <div class="config-row">
-          <label>Tile cooldown (turns) <span class="config-value" id="tileCooldownValue"></span></label>
-          <input type="range" id="cfgTileCooldown" min="0" max="10" step="1">
+          <label for="cfgTileCooldown">Tile cooldown (turns) <span class="config-value" id="tileCooldownValue"></span></label>
+          <input type="range" id="cfgTileCooldown" min="0" max="10" step="1" aria-label="Tile cooldown in turns">
         </div>
         <div class="config-row">
-          <label>Intern bias chance <span class="config-value" id="internBiasChanceValue"></span></label>
-          <input type="range" id="cfgInternBiasChance" min="0" max="1" step="0.05">
+          <label for="cfgInternBiasChance">Intern bias chance <span class="config-value" id="internBiasChanceValue"></span></label>
+          <input type="range" id="cfgInternBiasChance" min="0" max="1" step="0.05" aria-label="Intern bias chance">
         </div>
         <div class="config-row">
-          <label>Confetti chance <span class="config-value" id="confettiChanceValue"></span></label>
-          <input type="range" id="cfgConfettiChance" min="0" max="1" step="0.05">
+          <label for="cfgConfettiChance">Confetti chance <span class="config-value" id="confettiChanceValue"></span></label>
+          <input type="range" id="cfgConfettiChance" min="0" max="1" step="0.05" aria-label="Confetti chance">
         </div>
         <div class="config-row">
-          <label>Narrator rate <span class="config-value" id="narratorRateValue"></span></label>
-          <input type="range" id="cfgNarratorRate" min="0.5" max="1.5" step="0.05">
+          <label for="cfgNarratorRate">Narrator rate <span class="config-value" id="narratorRateValue"></span></label>
+          <input type="range" id="cfgNarratorRate" min="0.5" max="1.5" step="0.05" aria-label="Narrator speech rate">
         </div>
         <div class="config-row">
-          <label>Narrator pitch <span class="config-value" id="narratorPitchValue"></span></label>
-          <input type="range" id="cfgNarratorPitch" min="0.5" max="1.5" step="0.05">
+          <label for="cfgNarratorPitch">Narrator pitch <span class="config-value" id="narratorPitchValue"></span></label>
+          <input type="range" id="cfgNarratorPitch" min="0.5" max="1.5" step="0.05" aria-label="Narrator pitch">
         </div>
         <div class="config-row">
-          <label>Person emoji</label>
-          <input type="text" id="cfgPersonEmoji" maxlength="4">
+          <label for="cfgPersonEmoji">Person emoji</label>
+          <input type="text" id="cfgPersonEmoji" maxlength="4" aria-label="Person emoji">
         </div>
       </div>
       <div class="config-footer">
@@ -1227,11 +1229,6 @@
     let sharedAudioCtx = null;
     let audioUnlocked = false;
     let speechPrimed = false;
-    let lastBoingAttempt = null;
-    let lastSpeakAttempt = null;
-    // Debug surface removed from the page; keep a stub so existing call
-    // sites stay intact without resurrecting the DOM element.
-    function renderAudioDiag() {}
 
     function getAudioCtx() {
       if (sharedAudioCtx) return sharedAudioCtx;
@@ -1285,7 +1282,7 @@
         }
         const playPromise = silentAudioEl.play();
         if (playPromise && typeof playPromise.then === 'function') {
-          playPromise.then(() => { silentPlayed = true; renderAudioDiag(); }).catch(() => {});
+          playPromise.then(() => { silentPlayed = true; }).catch(() => {});
         } else {
           silentPlayed = true;
         }
@@ -1296,7 +1293,7 @@
       primeSilentAudioSession();
       const ctx = getAudioCtx();
       if (ctx) {
-        if (ctx.state === 'suspended') ctx.resume().then(renderAudioDiag).catch(() => {});
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
         if (!audioUnlocked) {
           try {
             const buffer = ctx.createBuffer(1, 1, 22050);
@@ -1323,19 +1320,15 @@
           window.speechSynthesis.getVoices();
         } catch (_) {}
       }
-      renderAudioDiag();
-    }
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.addEventListener?.('voiceschanged', renderAudioDiag);
     }
     ['pointerdown', 'touchstart', 'click', 'keydown'].forEach((evt) => {
       window.addEventListener(evt, primeAudio, { capture: true, passive: true });
     });
 
     function playBoing() {
-      if (!soundMode.checked) { lastBoingAttempt = 'muted'; renderAudioDiag(); return; }
+      if (!soundMode.checked) return;
       const audioCtx = getAudioCtx();
-      if (!audioCtx) { lastBoingAttempt = 'no-ctx'; renderAudioDiag(); return; }
+      if (!audioCtx) return;
       if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
       try {
         const t = audioCtx.currentTime;
@@ -1379,12 +1372,9 @@
         osc.start(t);
         vibrato.stop(t + duration + 0.02);
         osc.stop(t + duration + 0.02);
-
-        lastBoingAttempt = `ok(${audioCtx.state})`;
-      } catch (err) {
-        lastBoingAttempt = `err:${(err && err.name) || 'x'}`;
+      } catch (_) {
+        // Audio output may be denied on locked-down browsers; skip silently.
       }
-      renderAudioDiag();
     }
 
     function pickEnglishVoice() {
@@ -1406,21 +1396,16 @@
       utter.volume = 1;
       const voice = pickEnglishVoice();
       if (voice) utter.voice = voice;
-      utter.addEventListener('start', () => { lastSpeakAttempt = 'started'; renderAudioDiag(); });
-      utter.addEventListener('end', () => { lastSpeakAttempt = 'ended'; renderAudioDiag(); });
-      utter.addEventListener('error', (e) => { lastSpeakAttempt = `err:${e.error || 'x'}`; renderAudioDiag(); });
       try {
         window.speechSynthesis.speak(utter);
-        lastSpeakAttempt = 'queued';
-      } catch (err) {
-        lastSpeakAttempt = `throw:${(err && err.name) || 'x'}`;
+      } catch (_) {
+        // Speech may be denied; degrade to silent.
       }
-      renderAudioDiag();
     }
 
     function narrate(text) {
-      if (!narratorMode.checked) { lastSpeakAttempt = 'off'; renderAudioDiag(); return; }
-      if (!('speechSynthesis' in window)) { lastSpeakAttempt = 'n/a'; renderAudioDiag(); return; }
+      if (!narratorMode.checked) return;
+      if (!('speechSynthesis' in window)) return;
       try { window.speechSynthesis.resume(); } catch (_) {}
       // iOS Safari has a bug where cancel() immediately followed by speak()
       // leaves the new utterance queued forever. Delay speak() to the next
@@ -1632,6 +1617,15 @@
         sheet.setAttribute('open', '');
       }
       haptic(8);
+      // Move focus to the first sensible interactive control (after the
+      // close button) so keyboard / screen reader users land in the body
+      // of the sheet, not on the dismiss affordance.
+      requestAnimationFrame(() => {
+        const target = sheet.querySelector(
+          '.sheet-body input, .sheet-body button, .sheet-body [tabindex]:not([tabindex="-1"])'
+        );
+        if (target) try { target.focus({ preventScroll: true }); } catch (_) { target.focus(); }
+      });
     }
 
     function closeSheet(sheet) {
@@ -1783,7 +1777,6 @@
     loadConfig();
     renderConfigInputs();
     bindConfigInputs();
-    renderAudioDiag();
   </script>
 </body>
 </html>
