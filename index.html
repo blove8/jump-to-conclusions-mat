@@ -1404,7 +1404,26 @@
       if (!('speechSynthesis' in window)) return null;
       const voices = window.speechSynthesis.getVoices();
       if (!voices || voices.length === 0) return null;
+      // Prefer named premium voices — they sound noticeably less robotic
+      // than the platform defaults. Ordered by Office-Space-appropriate
+      // gravitas: Daniel (UK M), Arthur (UK M), Oliver (UK M), Rishi
+      // (en-IN M), Alex (US M, premium macOS), Fred (US M, gruff),
+      // Aaron (US M), Google UK English Male, then any en-GB/US fallback.
+      const preferNames = [
+        'Daniel', 'Arthur', 'Oliver', 'Rishi', 'Alex', 'Fred', 'Aaron',
+        'Google UK English Male', 'Microsoft Ryan Online', 'Microsoft Guy Online',
+      ];
+      for (const name of preferNames) {
+        const match = voices.find((v) => v.name === name);
+        if (match) return match;
+      }
+      const partial = voices.find((v) =>
+        preferNames.some((n) => v.name && v.name.includes(n))
+      );
+      if (partial) return partial;
       return (
+        voices.find((v) => v.lang === 'en-GB' && v.default) ||
+        voices.find((v) => v.lang === 'en-GB') ||
         voices.find((v) => v.lang === 'en-US' && v.default) ||
         voices.find((v) => v.lang === 'en-US') ||
         voices.find((v) => v.lang && v.lang.startsWith('en')) ||
@@ -1542,8 +1561,9 @@
       // Speak NOW while we're still inside the user-gesture call stack.
       // iOS Safari blocks speechSynthesis.speak() outside a gesture, so
       // deferring this to after the hop animation (as before) silently
-      // queued without starting.
-      narrate(selectedText);
+      // queued without starting. The prefix adds deadpan persona — the
+      // commas give the TTS engine natural pauses so the line lands.
+      narrate(`Per the Initech Decision Engine, the verdict is, ${selectedText}.`);
 
       // Quick hop animation across random zones before landing
       let hops = 0;
