@@ -245,14 +245,15 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 14px 12px 18px;
+      padding: 12px 10px 16px;
       font-family: var(--display);
-      font-size: clamp(0.48rem, 1.35vw, 0.72rem);
+      font-size: clamp(0.55rem, 1.55vw, 0.82rem);
       font-weight: 700;
       letter-spacing: -0.01em;
-      line-height: 1.18;
-      hyphens: auto;
-      overflow-wrap: break-word;
+      line-height: 1.12;
+      white-space: pre-line;
+      overflow-wrap: normal;
+      word-break: keep-all;
       color: #2a1a08;
       border: 1.5px solid var(--tile-border);
       cursor: default;
@@ -300,19 +301,19 @@
     .zone::before {
       content: attr(data-hit);
       position: absolute;
-      bottom: 3px;
+      top: 3px;
       right: 4px;
-      min-width: 14px;
-      height: 14px;
+      min-width: 13px;
+      height: 13px;
       padding: 0 4px;
       border-radius: 7px;
-      background: rgba(0, 0, 0, 0.28);
+      background: rgba(0, 0, 0, 0.32);
       color: rgba(255, 240, 210, 0.95);
       font-family: var(--mono);
       font-style: normal;
-      font-size: 0.56rem;
+      font-size: 0.52rem;
       font-weight: 500;
-      line-height: 14px;
+      line-height: 13px;
       text-align: center;
       letter-spacing: 0;
       pointer-events: none;
@@ -356,10 +357,6 @@
       max-width: 640px;
       position: relative;
       z-index: 1;
-    }
-
-    .button-row {
-      display: none;
     }
 
     .dock {
@@ -421,16 +418,19 @@
       position: absolute;
       inset: -4px;
       border-radius: 999px;
-      border: 2px solid rgba(255, 210, 77, 0.55);
+      border: 2px solid rgba(214, 168, 60, 0.55);
       opacity: 0;
       animation: pulse-jump 2.4s var(--ease-out) infinite;
       pointer-events: none;
     }
 
+    /* Stop nagging once the user has clearly engaged. */
+    body.has-jumped .btn-jump::after { animation: none; display: none; }
+
     @keyframes pulse-jump {
-      0%   { transform: scale(0.95); opacity: 0.7; }
-      70%  { transform: scale(1.15); opacity: 0; }
-      100% { transform: scale(1.15); opacity: 0; }
+      0%   { transform: scale(0.96); opacity: 0.55; }
+      70%  { transform: scale(1.14); opacity: 0; }
+      100% { transform: scale(1.14); opacity: 0; }
     }
 
     .btn-ghost {
@@ -699,50 +699,6 @@
       to { opacity: 0; transform: translateY(220px) rotate(320deg); }
     }
 
-    .config-panel {
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.02) 100%);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: var(--radius-md);
-      padding: 0.95rem 1rem;
-      width: 100%;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-
-    .config-panel > summary {
-      cursor: pointer;
-      font-family: 'Space Grotesk', system-ui, sans-serif;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      list-style: none;
-      user-select: none;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.15rem 0;
-    }
-
-    .config-panel > summary::-webkit-details-marker { display: none; }
-
-    .config-panel > summary::after {
-      content: '';
-      width: 10px;
-      height: 10px;
-      border-right: 2px solid var(--accent);
-      border-bottom: 2px solid var(--accent);
-      transform: rotate(-45deg);
-      transition: transform 0.25s var(--ease-out);
-      margin-right: 4px;
-    }
-
-    .config-panel[open] > summary::after {
-      transform: rotate(45deg);
-    }
-
     .config-body {
       display: grid;
       grid-template-columns: 1fr;
@@ -805,13 +761,6 @@
       margin-top: 0.85rem;
       display: flex;
       justify-content: flex-end;
-    }
-
-    .config-panel .feature-panel {
-      background: transparent;
-      border: none;
-      padding: 0;
-      margin-top: 0.85rem;
     }
 
     footer {
@@ -978,8 +927,6 @@
 
     .dock-toggle:active { transform: scale(0.94); }
 
-    /* Hide the inline collapsible panels (now in sheets) */
-    .config-panel { display: none; }
   </style>
 </head>
 <body>
@@ -1615,6 +1562,7 @@
               jumpCountEl.textContent = `${jumpCount} conclusion${jumpCount !== 1 ? 's' : ''} jumped to`;
               jumpBtn.textContent = 'JUMP AGAIN';
               shareBtn.hidden = false;
+              document.body.classList.add('has-jumped');
               updateStatsLine();
               resolve();
             }, 150);
@@ -1743,6 +1691,7 @@
       currentZone = null;
       setVerdictEmpty();
       jumpBtn.textContent = 'JUMP';
+      document.body.classList.remove('has-jumped');
       updateStatsLine();
 
       const firstZone = mat.querySelector('.zone');
