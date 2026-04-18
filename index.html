@@ -245,11 +245,12 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 10px 8px;
+      padding: 8px 6px 14px;
       font-family: var(--display);
-      font-size: clamp(0.62rem, 1.7vw, 0.92rem);
+      font-size: clamp(0.55rem, 1.7vw, 0.88rem);
       font-weight: 700;
       letter-spacing: -0.01em;
+      line-height: 1.1;
       color: #2a1a08;
       border: 1.5px solid var(--tile-border);
       cursor: default;
@@ -297,12 +298,26 @@
     .zone::before {
       content: attr(data-hit);
       position: absolute;
-      top: 4px;
-      right: 6px;
-      font-size: 0.62rem;
-      color: rgba(0, 0, 0, 0.55);
-      font-weight: bold;
+      bottom: 3px;
+      right: 4px;
+      min-width: 14px;
+      height: 14px;
+      padding: 0 4px;
+      border-radius: 7px;
+      background: rgba(0, 0, 0, 0.28);
+      color: rgba(255, 240, 210, 0.95);
+      font-family: var(--mono);
+      font-style: normal;
+      font-size: 0.56rem;
+      font-weight: 500;
+      line-height: 14px;
+      text-align: center;
+      letter-spacing: 0;
+      pointer-events: none;
     }
+
+    .zone[data-hit=""]::before { display: none; }
+    .zone.active::before { background: rgba(0, 0, 0, 0.4); color: #fff; }
 
     @keyframes pulse-ring {
       from { opacity: 1; transform: scale(0.5); }
@@ -537,7 +552,7 @@
         var(--card);
       color: var(--card-ink);
       border-radius: 6px;
-      padding: 1.4rem 1.5rem 1.2rem;
+      padding: 1.4rem 1.5rem 2.1rem;
       box-shadow:
         var(--shadow-2),
         0 1px 0 rgba(0,0,0,0.08),
@@ -547,7 +562,7 @@
       gap: 0.45rem;
       position: relative;
       overflow: hidden;
-      min-height: 144px;
+      min-height: 156px;
     }
 
     .conclusion-display::before {
@@ -925,6 +940,26 @@
       gap: 0.95rem;
     }
 
+    .sheet-actions {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 0.4rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .btn-secondary-quiet {
+      background: transparent;
+      color: var(--ink-dim);
+      border-color: rgba(244, 234, 212, 0.18);
+    }
+
+    .btn-secondary-quiet:hover {
+      background: rgba(244, 234, 212, 0.06);
+      color: var(--ink);
+      border-color: rgba(244, 234, 212, 0.3);
+    }
+
     /* Dock quick-toggles (sound + narrator pill icons) */
     .dock-toggle {
       flex: 0 0 auto;
@@ -1016,6 +1051,10 @@
           <button class="btn-secondary" id="addCustomBtn">Add to mat</button>
         </div>
         <div class="status-line" id="statsLine"></div>
+        <div class="sheet-actions">
+          <button class="btn-secondary" id="openConfigBtn">🎛 Tune the engine →</button>
+          <button class="btn-secondary btn-secondary-quiet" id="resetBtn">↺ Reset stats</button>
+        </div>
       </div>
     </div>
   </dialog>
@@ -1079,8 +1118,6 @@
       <button class="dock-toggle" id="narratorToggle" aria-pressed="false" aria-label="Toggle narrator" title="Narrator">🗣</button>
       <button class="btn-ghost" id="autoFiveBtn" aria-label="Auto jump 5 times" title="Auto ×5">×5</button>
       <button class="btn-ghost" id="openSettingsBtn" aria-label="Open settings" title="Settings">⚙</button>
-      <button class="btn-ghost" id="openConfigBtn" aria-label="Open advanced tuning" title="Tune">🎛</button>
-      <button class="btn-ghost" id="resetBtn" aria-label="Reset" title="Reset">↺</button>
     </div>
   </nav>
 
@@ -1651,7 +1688,15 @@
     }
 
     document.getElementById('openSettingsBtn').addEventListener('click', () => openSheet(settingsSheet));
-    document.getElementById('openConfigBtn').addEventListener('click', () => openSheet(configSheet));
+    document.getElementById('openConfigBtn').addEventListener('click', () => {
+      // Don't stack sheets — close Settings before opening Config.
+      closeSheet(settingsSheet);
+      openSheet(configSheet);
+    });
+
+    // After clicking Reset (which lives inside Settings), dismiss the sheet
+    // so the user can see the cleared verdict.
+    resetBtn.addEventListener('click', () => closeSheet(settingsSheet));
 
     document.querySelectorAll('[data-close-sheet]').forEach((el) => {
       el.addEventListener('click', () => {
