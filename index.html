@@ -567,16 +567,6 @@
       min-height: 156px;
     }
 
-    .conclusion-display::before {
-      content: "";
-      position: absolute;
-      left: 1.5rem;
-      right: 1.5rem;
-      top: 2.7rem;
-      height: 1px;
-      background: var(--card-rule);
-    }
-
     .conclusion-display::after {
       content: "INITECH · INTEROFFICE · CONFIDENTIAL";
       position: absolute;
@@ -592,12 +582,15 @@
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      gap: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.75rem;
       font-family: var(--mono);
-      font-size: 0.66rem;
-      letter-spacing: 0.18em;
+      font-size: 0.62rem;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       color: rgba(24, 19, 24, 0.55);
+      padding-bottom: 0.55rem;
+      border-bottom: 1px solid var(--card-rule);
     }
 
     .conclusion-label {
