@@ -189,6 +189,19 @@
       margin-top: 0.55rem;
     }
 
+    .tagline cite a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px dotted rgba(154, 143, 122, 0.5);
+      padding-bottom: 1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tagline cite a:hover {
+      color: var(--accent);
+      border-color: rgba(214, 168, 60, 0.7);
+    }
+
     .hero hr {
       border: 0;
       height: 1px;
@@ -970,7 +983,7 @@
     </h1>
     <p class="tagline">
       "You could jump to a conclusion!"
-      <cite>— T. Smykowski, R&amp;D</cite>
+      <cite><a href="https://youtu.be/sDEL4Ty950Q" target="_blank" rel="noopener" aria-label="Watch the original clip on YouTube">— T. Smykowski, R&amp;D</a></cite>
     </p>
     <hr>
   </header>
