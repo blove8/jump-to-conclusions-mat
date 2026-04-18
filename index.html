@@ -245,12 +245,14 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 8px 6px 14px;
+      padding: 10px 12px 18px;
       font-family: var(--display);
-      font-size: clamp(0.55rem, 1.7vw, 0.88rem);
+      font-size: clamp(0.5rem, 1.6vw, 0.85rem);
       font-weight: 700;
       letter-spacing: -0.01em;
-      line-height: 1.1;
+      line-height: 1.12;
+      hyphens: auto;
+      overflow-wrap: break-word;
       color: #2a1a08;
       border: 1.5px solid var(--tile-border);
       cursor: default;
@@ -326,12 +328,12 @@
 
     .person {
       position: absolute;
-      font-size: 2.2rem;
+      font-size: 1.6rem;
       pointer-events: none;
-      transition: left 0.5s cubic-bezier(0.22,1,0.36,1), top  0.5s cubic-bezier(0.22,1,0.36,1);
+      transition: left 0.45s var(--ease-spring), top 0.45s var(--ease-spring);
       z-index: 10;
-      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-      transform: translate(-35%, -80%);
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.55));
+      transform: translate(-50%, -100%);
     }
 
     .person.jumping {
@@ -339,9 +341,9 @@
     }
 
     @keyframes jump-anim {
-      0%   { transform: translate(-35%, -80%) scale(1); }
-      40%  { transform: translate(-35%, calc(-80% - 30px)) scale(1.2) rotate(-8deg); }
-      100% { transform: translate(-35%, -80%) scale(1); }
+      0%   { transform: translate(-50%, -100%) scale(1); }
+      40%  { transform: translate(-50%, calc(-100% - 32px)) scale(1.2) rotate(-8deg); }
+      100% { transform: translate(-50%, -100%) scale(1); }
     }
 
     .controls {
@@ -832,10 +834,7 @@
       z-index: 1;
     }
 
-    .person {
-      font-size: 1.5rem;
-      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45));
-    }
+    /* Avatar sizing/shadow merged into the main .person rule above. */
 
     /* Bottom-sheet dialog */
     .sheet {
@@ -1514,8 +1513,8 @@
       const matRect = mat.getBoundingClientRect();
       const zoneRect = zoneEl.getBoundingClientRect();
       return {
-        x: zoneRect.left - matRect.left + 18,
-        y: zoneRect.top  - matRect.top  + zoneRect.height - 16,
+        x: zoneRect.left - matRect.left + zoneRect.width / 2,
+        y: zoneRect.top  - matRect.top  + 4,
       };
     }
 
