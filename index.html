@@ -777,13 +777,33 @@
 
     footer {
       margin-top: 2rem;
-      font-size: 0.7rem;
-      color: rgba(245, 236, 224, 0.22);
+      font-size: 0.72rem;
+      color: rgba(245, 236, 224, 0.55);
       text-align: center;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       position: relative;
       z-index: 1;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .footer-archive {
+      font-size: 0.66rem;
+      letter-spacing: 0.22em;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(214, 168, 60, 0.45);
+      padding-bottom: 1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    footer a:hover {
+      color: #ffe08a;
+      border-color: rgba(214, 168, 60, 0.8);
     }
 
     /* Avatar sizing/shadow merged into the main .person rule above. */
@@ -1063,7 +1083,10 @@
     </div>
   </dialog>
 
-  <footer>Patent Pending · Initech R&amp;D · Est. 1999</footer>
+  <footer>
+    <div>Patent Pending · Initech R&amp;D · Est. 1999</div>
+    <div class="footer-archive"><a href="./original/" rel="noopener">See the original</a></div>
+  </footer>
 
   <nav class="dock" aria-label="Primary actions">
     <div class="dock-inner">
