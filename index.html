@@ -818,6 +818,140 @@
     }
 
     .person { font-size: 2.4rem; }
+
+    /* Bottom-sheet dialog */
+    .sheet {
+      position: fixed;
+      left: 0; right: 0; bottom: 0; top: auto;
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      border: none;
+      border-radius: 22px 22px 0 0;
+      padding: 0;
+      background: linear-gradient(180deg, #1a1620 0%, #14111a 100%);
+      color: var(--ink);
+      box-shadow: 0 -30px 80px rgba(0,0,0,0.6);
+      max-height: 85dvh;
+      overflow: hidden;
+    }
+
+    .sheet[open] {
+      display: flex;
+      flex-direction: column;
+      animation: sheet-in 0.3s var(--ease-spring);
+    }
+
+    .sheet::backdrop {
+      background: rgba(8, 6, 12, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      animation: backdrop-in 0.3s ease-out;
+    }
+
+    @keyframes sheet-in {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    @keyframes backdrop-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .sheet-handle {
+      display: flex;
+      justify-content: center;
+      padding: 0.55rem 0 0.3rem;
+      cursor: pointer;
+    }
+
+    .sheet-handle::before {
+      content: "";
+      width: 38px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(244, 234, 212, 0.22);
+    }
+
+    .sheet-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.4rem 1.25rem 0.85rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .sheet-title {
+      font-family: var(--display);
+      font-style: italic;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    .sheet-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+    }
+
+    .sheet-close {
+      background: rgba(255,255,255,0.06);
+      color: var(--ink);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sheet-close:hover { background: rgba(255,255,255,0.1); }
+
+    .sheet-body {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 1rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+      display: grid;
+      gap: 0.95rem;
+    }
+
+    /* Dock quick-toggles (sound + narrator pill icons) */
+    .dock-toggle {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.04);
+      color: var(--ink-dim);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 1.05rem;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+    }
+
+    .dock-toggle[aria-pressed="true"] {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(214, 168, 60, 0.55);
+    }
+
+    .dock-toggle:active { transform: scale(0.94); }
+
+    /* Hide the inline collapsible panels (now in sheets) */
+    .config-panel { display: none; }
   </style>
 </head>
 <body>
@@ -858,8 +992,18 @@
       </div>
     </article>
 
-    <details class="config-panel" id="settingsPanel">
-      <summary>Settings</summary>
+  </div>
+
+  <dialog class="sheet" id="settingsSheet" aria-label="Settings">
+    <div class="sheet-handle" data-close-sheet aria-hidden="true"></div>
+    <header class="sheet-header">
+      <div>
+        <div class="sheet-eyebrow">Form 7B</div>
+        <div class="sheet-title">Settings</div>
+      </div>
+      <button class="sheet-close" data-close-sheet aria-label="Close">×</button>
+    </header>
+    <div class="sheet-body">
       <div class="feature-panel">
         <div class="feature-grid">
           <label class="feature-line"><input type="checkbox" id="chaosMode"> Chaos Mode (extra wild hops)</label>
@@ -868,15 +1012,24 @@
           <label class="feature-line"><input type="checkbox" id="internBiasMode"> Intern Blame Bias</label>
         </div>
         <div class="custom-add">
-          <input id="customConclusionInput" maxlength="40" placeholder="Add a custom dumb conclusion..." aria-label="Custom conclusion">
-          <button class="btn-secondary" id="addCustomBtn">ADD TO MAT</button>
+          <input id="customConclusionInput" maxlength="40" placeholder="Add a custom dumb conclusion…" aria-label="Custom conclusion">
+          <button class="btn-secondary" id="addCustomBtn">Add to mat</button>
         </div>
         <div class="status-line" id="statsLine"></div>
       </div>
-    </details>
+    </div>
+  </dialog>
 
-    <details class="config-panel" id="configPanel">
-      <summary>Config</summary>
+  <dialog class="sheet" id="configSheet" aria-label="Tune">
+    <div class="sheet-handle" data-close-sheet aria-hidden="true"></div>
+    <header class="sheet-header">
+      <div>
+        <div class="sheet-eyebrow">Form 27B/6 — Advanced</div>
+        <div class="sheet-title">Tune the engine</div>
+      </div>
+      <button class="sheet-close" data-close-sheet aria-label="Close">×</button>
+    </header>
+    <div class="sheet-body">
       <div class="config-body">
         <div class="config-row">
           <label>Hop count base <span class="config-value" id="hopCountBaseValue"></span></label>
@@ -912,18 +1065,22 @@
         </div>
       </div>
       <div class="config-footer">
-        <button class="btn-secondary" id="restoreDefaultsBtn">RESTORE DEFAULTS</button>
+        <button class="btn-secondary" id="restoreDefaultsBtn">Restore defaults</button>
       </div>
-    </details>
-  </div>
+    </div>
+  </dialog>
 
   <footer>Patent Pending · Initech R&amp;D · Est. 1999</footer>
 
   <nav class="dock" aria-label="Primary actions">
     <div class="dock-inner">
-      <button class="btn-ghost" id="resetBtn" aria-label="Reset stats" title="Reset stats">↺</button>
+      <button class="dock-toggle" id="soundToggle" aria-pressed="true" aria-label="Toggle boing sound" title="Boing sound">🔔</button>
       <button class="btn-jump" id="jumpBtn">JUMP!</button>
+      <button class="dock-toggle" id="narratorToggle" aria-pressed="false" aria-label="Toggle narrator" title="Narrator">🗣</button>
       <button class="btn-ghost" id="autoFiveBtn" aria-label="Auto jump 5 times" title="Auto ×5">×5</button>
+      <button class="btn-ghost" id="openSettingsBtn" aria-label="Open settings" title="Settings">⚙</button>
+      <button class="btn-ghost" id="openConfigBtn" aria-label="Open advanced tuning" title="Tune">🎛</button>
+      <button class="btn-ghost" id="resetBtn" aria-label="Reset" title="Reset">↺</button>
     </div>
   </nav>
 
@@ -1472,6 +1629,67 @@
     });
 
     shareBtn.addEventListener('click', shareVerdict);
+
+    // Bottom-sheet wiring
+    const settingsSheet = document.getElementById('settingsSheet');
+    const configSheet = document.getElementById('configSheet');
+
+    function openSheet(sheet) {
+      if (!sheet) return;
+      if (typeof sheet.showModal === 'function') {
+        try { sheet.showModal(); } catch (_) { sheet.setAttribute('open', ''); }
+      } else {
+        sheet.setAttribute('open', '');
+      }
+      haptic(8);
+    }
+
+    function closeSheet(sheet) {
+      if (!sheet) return;
+      if (typeof sheet.close === 'function') sheet.close();
+      else sheet.removeAttribute('open');
+    }
+
+    document.getElementById('openSettingsBtn').addEventListener('click', () => openSheet(settingsSheet));
+    document.getElementById('openConfigBtn').addEventListener('click', () => openSheet(configSheet));
+
+    document.querySelectorAll('[data-close-sheet]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const sheet = el.closest('dialog');
+        if (sheet) closeSheet(sheet);
+      });
+    });
+
+    // Click-on-backdrop closes the sheet (native dialog only triggers
+    // `click` on the dialog itself when the backdrop is hit).
+    [settingsSheet, configSheet].forEach((sheet) => {
+      if (!sheet) return;
+      sheet.addEventListener('click', (e) => {
+        if (e.target === sheet) closeSheet(sheet);
+      });
+    });
+
+    // Dock quick-toggles mirror the checkboxes inside the Settings sheet.
+    const soundToggle = document.getElementById('soundToggle');
+    const narratorToggle = document.getElementById('narratorToggle');
+
+    function syncDockToggle(toggle, checkbox) {
+      toggle.setAttribute('aria-pressed', checkbox.checked ? 'true' : 'false');
+    }
+
+    function bindDockToggle(toggle, checkbox) {
+      syncDockToggle(toggle, checkbox);
+      toggle.addEventListener('click', () => {
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        syncDockToggle(toggle, checkbox);
+        haptic(8);
+      });
+      checkbox.addEventListener('change', () => syncDockToggle(toggle, checkbox));
+    }
+
+    bindDockToggle(soundToggle, soundMode);
+    bindDockToggle(narratorToggle, narratorMode);
 
     resetBtn.addEventListener('click', () => {
       jumpCount = 0;
