@@ -784,6 +784,13 @@
       text-transform: uppercase;
       position: relative;
       z-index: 1;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .footer-archive {
+      font-size: 0.66rem;
+      letter-spacing: 0.22em;
     }
 
     footer a {
@@ -1077,8 +1084,8 @@
   </dialog>
 
   <footer>
-    Patent Pending · Initech R&amp;D · Est. 1999 ·
-    <a href="./original/" rel="noopener">See the original</a>
+    <div>Patent Pending · Initech R&amp;D · Est. 1999</div>
+    <div class="footer-archive"><a href="./original/" rel="noopener">See the original</a></div>
   </footer>
 
   <nav class="dock" aria-label="Primary actions">
