@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JTC Mat">
+  <meta name="description" content="Make any hard call in seconds. Jump to a conclusion.">
   <title>Jump to Conclusions Mat™</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -389,20 +397,6 @@
       margin-top: 0.85rem;
     }
 
-    .audio-diag {
-      margin-top: 1rem;
-      font-size: 0.72rem;
-      color: #888;
-      font-family: 'Courier New', monospace;
-      text-align: center;
-      letter-spacing: 0.03em;
-      min-height: 1em;
-    }
-
-    .audio-diag .ok { color: #6fcf97; }
-    .audio-diag .warn { color: #f2c94c; }
-    .audio-diag .bad { color: #eb5757; }
-
     footer {
       margin-top: 3rem;
       font-size: 0.72rem;
@@ -495,8 +489,6 @@
         <button class="btn-secondary" id="restoreDefaultsBtn">RESTORE DEFAULTS</button>
       </div>
     </details>
-
-    <div class="audio-diag" id="audioDiag" aria-live="polite"></div>
   </div>
 
   <footer>Patent Pending - Initech R&amp;D Division - Est. 1999</footer>
@@ -618,29 +610,9 @@
     let speechPrimed = false;
     let lastBoingAttempt = null;
     let lastSpeakAttempt = null;
-    const audioDiag = document.getElementById('audioDiag');
-
-    function renderAudioDiag() {
-      if (!audioDiag) return;
-      const ctxState = sharedAudioCtx ? sharedAudioCtx.state : 'none';
-      const ctxClass = ctxState === 'running' ? 'ok' : (ctxState === 'suspended' ? 'warn' : 'bad');
-      const unlockClass = audioUnlocked ? 'ok' : 'warn';
-      const speechHas = 'speechSynthesis' in window;
-      const speechClass = speechPrimed ? 'ok' : (speechHas ? 'warn' : 'bad');
-      const silentClass = silentPlayed ? 'ok' : 'warn';
-      const voiceCount = speechHas ? (window.speechSynthesis.getVoices() || []).length : 0;
-      const voicesClass = voiceCount > 0 ? 'ok' : 'warn';
-      const parts = [
-        `ctx:<span class="${ctxClass}">${ctxState}</span>`,
-        `unlocked:<span class="${unlockClass}">${audioUnlocked}</span>`,
-        `silent:<span class="${silentClass}">${silentPlayed ? 'played' : 'no'}</span>`,
-        `speech:<span class="${speechClass}">${speechPrimed ? 'primed' : (speechHas ? 'idle' : 'n/a')}</span>`,
-        `voices:<span class="${voicesClass}">${voiceCount}</span>`,
-      ];
-      if (lastBoingAttempt) parts.push(`boing:${lastBoingAttempt}`);
-      if (lastSpeakAttempt) parts.push(`spoke:${lastSpeakAttempt}`);
-      audioDiag.innerHTML = parts.join(' | ');
-    }
+    // Debug surface removed from the page; keep a stub so existing call
+    // sites stay intact without resurrecting the DOM element.
+    function renderAudioDiag() {}
 
     function getAudioCtx() {
       if (sharedAudioCtx) return sharedAudioCtx;
