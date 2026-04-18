@@ -1507,7 +1507,7 @@
       const zoneRect = zoneEl.getBoundingClientRect();
       return {
         x: zoneRect.left - matRect.left + zoneRect.width / 2,
-        y: zoneRect.top  - matRect.top  + 4,
+        y: zoneRect.top  - matRect.top  + zoneRect.height - 6,
       };
     }
 
