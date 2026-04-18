@@ -532,87 +532,130 @@
     .conclusion-display {
       width: 100%;
       max-width: 520px;
-      background: var(--card);
+      background:
+        repeating-linear-gradient(180deg, transparent 0 30px, rgba(24,19,24,0.05) 30px 31px),
+        var(--card);
       color: var(--card-ink);
-      border-radius: var(--radius-md);
-      padding: 1.1rem 1.25rem;
+      border-radius: 6px;
+      padding: 1.4rem 1.5rem 1.2rem;
       box-shadow:
         var(--shadow-2),
-        inset 0 1px 0 rgba(255,255,255,0.9),
-        inset 0 -1px 0 rgba(0,0,0,0.06);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 0.3rem;
+        0 1px 0 rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.6);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.45rem;
       position: relative;
       overflow: hidden;
-      min-height: 88px;
+      min-height: 144px;
     }
 
     .conclusion-display::before {
       content: "";
       position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(255, 210, 77, 0.15), transparent 60%),
-        radial-gradient(circle at 100% 100%, rgba(255, 107, 74, 0.12), transparent 60%);
-      pointer-events: none;
+      left: 1.5rem;
+      right: 1.5rem;
+      top: 2.7rem;
+      height: 1px;
+      background: var(--card-rule);
     }
 
-    .conclusion-display > * { position: relative; z-index: 1; }
+    .conclusion-display::after {
+      content: "INITECH · INTEROFFICE · CONFIDENTIAL";
+      position: absolute;
+      bottom: 0.55rem;
+      right: 0.9rem;
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.22em;
+      color: rgba(24, 19, 24, 0.32);
+    }
+
+    .verdict-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(24, 19, 24, 0.55);
+    }
 
     .conclusion-label {
-      font-size: 0.7rem;
+      font-family: var(--mono);
+      font-size: 0.66rem;
       text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: #7a6b52;
-      font-weight: 600;
+      letter-spacing: 0.22em;
+      color: rgba(24, 19, 24, 0.55);
+      margin-top: 0.15rem;
     }
 
     .conclusion-text {
-      font-family: 'Space Grotesk', system-ui, sans-serif;
-      font-size: clamp(1.25rem, 4vw, 1.8rem);
+      font-family: var(--display);
+      font-style: italic;
+      font-size: clamp(1.6rem, 5.5vw, 2.4rem);
       color: var(--card-ink);
       font-weight: 700;
-      letter-spacing: -0.01em;
-      line-height: 1.2;
-      margin-top: 0.15rem;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      margin-top: 0.4rem;
       opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.35s var(--ease-out), transform 0.45s var(--ease-spring);
+      transform: translateY(6px);
+      transition: opacity 0.4s var(--ease-out), transform 0.5s var(--ease-spring);
       max-width: 100%;
     }
 
     .conclusion-text.visible { opacity: 1; transform: translateY(0); }
 
+    .conclusion-text.empty {
+      font-style: italic;
+      font-weight: 500;
+      color: rgba(24, 19, 24, 0.42);
+      font-size: clamp(1.1rem, 3.8vw, 1.45rem);
+      opacity: 1;
+      transform: none;
+    }
+
+    .verdict-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 0.4rem;
+    }
+
     .jump-count {
-      font-size: 0.78rem;
-      color: #8a7b62;
-      margin-top: 0.35rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(24, 19, 24, 0.55);
       font-weight: 500;
     }
 
     .btn-share {
-      margin-top: 0.7rem;
-      background: var(--card-ink);
-      color: var(--card);
-      border: none;
-      border-radius: 999px;
-      padding: 0.55rem 1.15rem;
-      font-family: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
+      background: transparent;
+      color: var(--stamp);
+      border: 1.5px solid var(--stamp);
+      border-radius: 4px;
+      padding: 0.4rem 0.7rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      transition: transform 0.1s, filter 0.15s;
+      gap: 0.35rem;
+      transition: transform 0.1s, background 0.15s, color 0.15s;
+      transform: rotate(-1.5deg);
     }
 
-    .btn-share:hover { filter: brightness(1.1); }
-    .btn-share:active { transform: scale(0.97); }
+    .btn-share:hover { background: var(--stamp); color: var(--card); }
+    .btn-share:active { transform: rotate(-1.5deg) scale(0.96); }
     .btn-share[hidden] { display: none; }
 
     .mat-wrapper.chaos-shake {
@@ -798,14 +841,22 @@
   </div>
 
   <div class="controls">
-    <div class="conclusion-display">
-      <div class="conclusion-label" id="conclusionLabel"></div>
-      <div class="conclusion-text" id="conclusionText" aria-live="polite" aria-atomic="true"></div>
-      <div class="jump-count" id="jumpCount"></div>
-      <button class="btn-share" id="shareBtn" hidden>
-        <span aria-hidden="true">↗</span> Share this take
-      </button>
-    </div>
+    <article class="conclusion-display" aria-label="Verdict memo">
+      <div class="verdict-meta">
+        <span>From: Decision Engine</span>
+        <span id="verdictDate"></span>
+      </div>
+      <div class="conclusion-label" id="conclusionLabel">Re:</div>
+      <div class="conclusion-text empty" id="conclusionText" aria-live="polite" aria-atomic="true">
+        Awaiting your first hot take.
+      </div>
+      <div class="verdict-footer">
+        <span class="jump-count" id="jumpCount">No conclusions filed</span>
+        <button class="btn-share" id="shareBtn" hidden>
+          <span aria-hidden="true">↗</span> Reproduce
+        </button>
+      </div>
+    </article>
 
     <details class="config-panel" id="settingsPanel">
       <summary>Settings</summary>
@@ -910,6 +961,25 @@
     const conclusionLabel = document.getElementById('conclusionLabel');
     const jumpCountEl = document.getElementById('jumpCount');
     const shareBtn = document.getElementById('shareBtn');
+    const verdictDateEl = document.getElementById('verdictDate');
+
+    function stampVerdictDate() {
+      if (!verdictDateEl) return;
+      const now = new Date();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      const date = now.toLocaleDateString([], { month: 'short', day: '2-digit' }).toUpperCase();
+      verdictDateEl.textContent = `Filed ${date} · ${time}`;
+    }
+
+    function setVerdictEmpty() {
+      conclusionText.classList.add('empty');
+      conclusionText.classList.remove('visible');
+      conclusionText.textContent = 'Awaiting your first hot take.';
+      conclusionLabel.textContent = 'Re:';
+      jumpCountEl.textContent = 'No conclusions filed';
+      verdictDateEl.textContent = '';
+      shareBtn.hidden = true;
+    }
 
     function haptic(pattern) {
       if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (_) {} }
@@ -1304,6 +1374,7 @@
       // Clear previous active
       if (currentZone) currentZone.classList.remove('active');
       conclusionText.classList.remove('visible');
+      conclusionText.classList.remove('empty');
       shareBtn.hidden = true;
 
       const zones = Array.from(mat.querySelectorAll('.zone'));
@@ -1338,8 +1409,10 @@
             blameCounts[picked] += 1;
             landedZone.dataset.hit = String(blameCounts[picked]);
 
-            conclusionLabel.textContent = 'You have concluded:';
+            conclusionLabel.textContent = 'Re: Your most pressing question';
+            conclusionText.classList.remove('empty');
             conclusionText.textContent = selectedText;
+            stampVerdictDate();
 
             playBoing();
             haptic([18, 32, 18]);
@@ -1412,12 +1485,8 @@
         zone.dataset.hit = '';
       });
       currentZone = null;
-      conclusionLabel.textContent = '';
-      conclusionText.textContent = '';
-      conclusionText.classList.remove('visible');
-      jumpCountEl.textContent = '';
+      setVerdictEmpty();
       jumpBtn.textContent = 'JUMP';
-      shareBtn.hidden = true;
       updateStatsLine();
 
       const firstZone = mat.querySelector('.zone');
@@ -1433,9 +1502,11 @@
       if (zone) zone.textContent = customText;
       customConclusionInput.value = '';
       updateStatsLine();
-      conclusionLabel.textContent = 'Mat mutation:';
-      conclusionText.textContent = `Replaced zone ${indexToReplace + 1} with your custom conclusion.`;
+      conclusionLabel.textContent = 'Re: Mat mutation';
+      conclusionText.classList.remove('empty');
+      conclusionText.textContent = `Zone ${indexToReplace + 1} now reads: "${customText}".`;
       conclusionText.classList.add('visible');
+      stampVerdictDate();
     });
 
     customConclusionInput.addEventListener('keydown', (event) => {
