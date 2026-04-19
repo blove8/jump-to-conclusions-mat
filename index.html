@@ -1548,16 +1548,27 @@
       if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (_) {} }
     }
 
+    function buildPermalink(tileIdx, question, timestampSec) {
+      const url = new URL(location.href);
+      url.search = '';
+      url.hash = '';
+      if (tileIdx != null && tileIdx >= 0) url.searchParams.set('v', String(tileIdx));
+      if (question) url.searchParams.set('q', question);
+      url.searchParams.set('t', String(timestampSec || Math.floor(Date.now() / 1000)));
+      return url.toString();
+    }
+
     async function shareVerdict() {
       const text = conclusionText.textContent?.trim();
       if (!text) return;
+      const permalink = buildPermalink(lastPicked, activeQuestion);
       const q = activeQuestion ? `I asked "${activeQuestion}" and ` : 'I ';
       const message = `${q}jumped to a conclusion: "${text}" — via Jump to Conclusions Mat™`;
       try {
         if (navigator.share) {
-          await navigator.share({ title: 'Jump to Conclusions Mat™', text: message, url: location.href });
+          await navigator.share({ title: 'Jump to Conclusions Mat™', text: message, url: permalink });
         } else if (navigator.clipboard) {
-          await navigator.clipboard.writeText(message);
+          await navigator.clipboard.writeText(`${message}\n${permalink}`);
           shareBtn.textContent = 'Copied ✓';
           setTimeout(() => { shareBtn.innerHTML = '<span aria-hidden="true">↗</span> Reproduce'; }, 1600);
         }
@@ -2396,6 +2407,51 @@
     loadConfig();
     renderConfigInputs();
     bindConfigInputs();
+
+    // --- Permalink reproducer --------------------------------------
+    // ?v=<tileIdx>&q=<question>&t=<unixSeconds>
+    // When present, render the memo deterministically on load without
+    // running the hop animation. Lets someone share an exact verdict.
+    (function maybeReproduceVerdict() {
+      const params = new URLSearchParams(location.search);
+      const rawV = params.get('v');
+      if (rawV == null) return;
+      const idx = parseInt(rawV, 10);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= conclusions.length) return;
+      const question = (params.get('q') || '').slice(0, 120);
+      const tSec = parseInt(params.get('t'), 10);
+      const filedAt = Number.isInteger(tSec) ? new Date(tSec * 1000) : new Date();
+
+      activeQuestion = question;
+      if (question) {
+        askInput.value = question;
+        syncAskState();
+      }
+
+      const zone = mat.querySelector(`.zone[data-index="${idx}"]`);
+      if (zone) {
+        zone.classList.add('active');
+        zone.dataset.hit = '1';
+        currentZone = zone;
+        requestAnimationFrame(() => placePerson(zone, false));
+      }
+
+      const selectedText = conclusions[idx].replace(/\n/g, ' ');
+      conclusionLabel.textContent = verdictLabelFor(activeQuestion);
+      conclusionText.classList.remove('empty');
+      conclusionText.textContent = selectedText;
+      if (verdictDateEl) {
+        const time = filedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        const date = filedAt.toLocaleDateString([], { month: 'short', day: '2-digit' }).toUpperCase();
+        verdictDateEl.textContent = `Filed ${date} · ${time}`;
+      }
+      conclusionText.classList.add('visible');
+      jumpCountEl.textContent = 'Shared verdict · tap JUMP to roll your own';
+      jumpBtn.textContent = 'JUMP';
+      shareBtn.hidden = false;
+      lastPicked = idx;
+      document.body.classList.add('has-jumped');
+    })();
 
     // --- Metrics overlay (visible only with ?metrics=1 or #metrics) ---
     (function mountMetricsPanel() {
