@@ -894,6 +894,152 @@
       letter-spacing: 0.22em;
     }
 
+    /* Metrics overlay — ?metrics=1 only */
+    .metrics-panel {
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + 12px);
+      right: 12px;
+      z-index: 40;
+      width: min(280px, calc(100vw - 24px));
+      max-height: min(70dvh, 560px);
+      overflow-y: auto;
+      background: rgba(18, 14, 22, 0.95);
+      border: 1px solid rgba(214, 168, 60, 0.35);
+      border-radius: 10px;
+      padding: 0.75rem 0.85rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--ink);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .metrics-panel header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 0.55rem;
+    }
+
+    .metrics-panel header strong {
+      font-weight: 500;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .metrics-close {
+      background: transparent;
+      border: none;
+      color: var(--ink-dim);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0.3rem;
+    }
+
+    .metrics-close:hover { color: var(--ink); }
+
+    .metrics-panel dl {
+      display: grid;
+      gap: 0.22rem 0.6rem;
+      margin: 0;
+    }
+
+    .metrics-panel dl > div {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .metrics-panel dt {
+      color: var(--ink-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.6rem;
+    }
+
+    .metrics-panel dd {
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .metrics-panel dd span {
+      color: var(--ink-dim);
+      margin-left: 0.25rem;
+    }
+
+    .metrics-top {
+      margin-top: 0.7rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .metrics-top strong {
+      display: block;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-size: 0.6rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .metrics-top ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .metrics-top li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .metrics-top li span {
+      color: var(--ink);
+      font-family: var(--ui);
+      font-size: 0.7rem;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .metrics-top li em {
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .metrics-actions {
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .metrics-clear {
+      background: transparent;
+      color: var(--ink-dim);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .metrics-clear:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
     footer a {
       color: var(--accent);
       text-decoration: none;
@@ -1322,8 +1468,9 @@
         } else if (navigator.clipboard) {
           await navigator.clipboard.writeText(message);
           shareBtn.textContent = 'Copied ✓';
-          setTimeout(() => { shareBtn.innerHTML = '<span aria-hidden="true">↗</span> Share this take'; }, 1600);
+          setTimeout(() => { shareBtn.innerHTML = '<span aria-hidden="true">↗</span> Reproduce'; }, 1600);
         }
+        logEvent('share');
       } catch (_) {}
     }
 
@@ -1333,6 +1480,91 @@
     let isJumping = false;
     const lastLandedTurnByIndex = new Array(conclusions.length).fill(-Infinity);
     const blameCounts = new Array(conclusions.length).fill(0);
+
+    // --- Metrics (local-only, privacy-safe) --------------------------
+    // We never send these anywhere. They're used for the in-page
+    // ?metrics=1 readout to help us decide what to build next.
+    const METRICS_STORAGE_KEY = 'jtcmat.metrics.v1';
+    const METRICS_DEFAULTS = () => ({
+      version: 1,
+      installedAt: new Date().toISOString(),
+      sessions: 0,
+      firstJumpAt: null,
+      lastJumpAt: null,
+      counts: {
+        jumps: 0,
+        jumpsWithQuestion: 0,
+        jumpsAuto: 0,
+        shares: 0,
+        customAdds: 0,
+        resets: 0,
+        archiveOpens: 0,
+        settingsOpens: 0,
+        tuneOpens: 0,
+        narratorToggled: 0,
+        soundToggled: 0,
+      },
+      tileLandings: new Array(12).fill(0),
+      activeDays: {}, // { 'YYYY-MM-DD': count }
+    });
+
+    const metrics = (function loadMetrics() {
+      try {
+        const raw = localStorage.getItem(METRICS_STORAGE_KEY);
+        if (!raw) return METRICS_DEFAULTS();
+        const parsed = JSON.parse(raw);
+        // Light sanity-check; merge onto defaults so new fields exist.
+        const defaults = METRICS_DEFAULTS();
+        return {
+          ...defaults,
+          ...parsed,
+          counts: { ...defaults.counts, ...(parsed.counts || {}) },
+          tileLandings: Array.isArray(parsed.tileLandings) && parsed.tileLandings.length === 12
+            ? parsed.tileLandings
+            : defaults.tileLandings,
+          activeDays: parsed.activeDays || {},
+        };
+      } catch (_) {
+        return METRICS_DEFAULTS();
+      }
+    })();
+
+    function saveMetrics() {
+      try { localStorage.setItem(METRICS_STORAGE_KEY, JSON.stringify(metrics)); }
+      catch (_) {}
+    }
+
+    function todayKey() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function logEvent(name, data) {
+      const now = new Date().toISOString();
+      if (name === 'jump' || name === 'jump_auto') {
+        metrics.counts.jumps += 1;
+        if (name === 'jump_auto') metrics.counts.jumpsAuto += 1;
+        if (data && data.hasQuestion) metrics.counts.jumpsWithQuestion += 1;
+        if (data && typeof data.tile === 'number' && metrics.tileLandings[data.tile] != null) {
+          metrics.tileLandings[data.tile] += 1;
+        }
+        if (!metrics.firstJumpAt) metrics.firstJumpAt = now;
+        metrics.lastJumpAt = now;
+        const key = todayKey();
+        metrics.activeDays[key] = (metrics.activeDays[key] || 0) + 1;
+      } else if (name === 'share')           metrics.counts.shares += 1;
+      else   if (name === 'custom_add')      metrics.counts.customAdds += 1;
+      else   if (name === 'reset')           metrics.counts.resets += 1;
+      else   if (name === 'archive_open')    metrics.counts.archiveOpens += 1;
+      else   if (name === 'settings_open')   metrics.counts.settingsOpens += 1;
+      else   if (name === 'tune_open')       metrics.counts.tuneOpens += 1;
+      else   if (name === 'narrator_toggle') metrics.counts.narratorToggled += 1;
+      else   if (name === 'sound_toggle')    metrics.counts.soundToggled += 1;
+      saveMetrics();
+    }
+
+    // One session per page load.
+    metrics.sessions += 1;
+    saveMetrics();
 
     const CONFIG_STORAGE_KEY = 'jtcmat.config.v1';
     const CONFIG_DEFAULTS = Object.freeze({
@@ -1695,6 +1927,7 @@
       const picked = Number(landedZone.dataset.index);
       const selectedText = conclusions[picked].replace(/\n/g, ' ');
       activeQuestion = currentQuestion();
+      logEvent('jump', { tile: picked, hasQuestion: activeQuestion.length > 0 });
 
       // Speak NOW while we're still inside the user-gesture call stack.
       // iOS Safari blocks speechSynthesis.speak() outside a gesture, so
@@ -1817,8 +2050,12 @@
       else sheet.removeAttribute('open');
     }
 
-    document.getElementById('openSettingsBtn').addEventListener('click', () => openSheet(settingsSheet));
+    document.getElementById('openSettingsBtn').addEventListener('click', () => {
+      logEvent('settings_open');
+      openSheet(settingsSheet);
+    });
     document.getElementById('openConfigBtn').addEventListener('click', () => {
+      logEvent('tune_open');
       // Don't stack sheets — close Settings before opening Config.
       closeSheet(settingsSheet);
       openSheet(configSheet);
@@ -1865,8 +2102,11 @@
 
     bindDockToggle(soundToggle, soundMode);
     bindDockToggle(narratorToggle, narratorMode);
+    soundMode.addEventListener('change', () => logEvent('sound_toggle'));
+    narratorMode.addEventListener('change', () => logEvent('narrator_toggle'));
 
     resetBtn.addEventListener('click', () => {
+      logEvent('reset');
       jumpCount = 0;
       lastPicked = -1;
       for (let i = 0; i < conclusions.length; i++) {
@@ -1899,6 +2139,7 @@
       if (zone) zone.textContent = customText;
       customConclusionInput.value = '';
       updateStatsLine();
+      logEvent('custom_add');
       conclusionLabel.textContent = 'Re: Mat mutation';
       conclusionText.classList.remove('empty');
       conclusionText.textContent = `Zone ${indexToReplace + 1} now reads: "${customText}".`;
@@ -1963,6 +2204,74 @@
     loadConfig();
     renderConfigInputs();
     bindConfigInputs();
+
+    // --- Metrics overlay (visible only with ?metrics=1 or #metrics) ---
+    (function mountMetricsPanel() {
+      const enabled = /[?&]metrics=1\b/.test(location.search) || location.hash === '#metrics';
+      if (!enabled) return;
+      const panel = document.createElement('aside');
+      panel.className = 'metrics-panel';
+      panel.setAttribute('aria-label', 'Local metrics');
+      document.body.appendChild(panel);
+
+      function daysSince(iso) {
+        if (!iso) return '—';
+        const then = new Date(iso).getTime();
+        if (Number.isNaN(then)) return '—';
+        const days = Math.floor((Date.now() - then) / 86400000);
+        return days === 0 ? 'today' : `${days}d ago`;
+      }
+
+      function fmt(n) { return Number(n || 0).toLocaleString(); }
+
+      function render() {
+        const c = metrics.counts;
+        const total = c.jumps || 0;
+        const qPct = total > 0 ? Math.round((c.jumpsWithQuestion / total) * 100) : 0;
+        const sharePct = total > 0 ? Math.round((c.shares / total) * 100) : 0;
+        const activeDays = Object.keys(metrics.activeDays || {}).length;
+        const top = metrics.tileLandings
+          .map((hits, i) => ({ hits, i, label: (conclusions[i] || '—').replace(/\n/g, ' ') }))
+          .sort((a, b) => b.hits - a.hits)
+          .slice(0, 3)
+          .filter((x) => x.hits > 0);
+        panel.innerHTML = `
+          <header><strong>Metrics</strong><button type="button" class="metrics-close" aria-label="Close">×</button></header>
+          <dl>
+            <div><dt>Installed</dt><dd>${daysSince(metrics.installedAt)}</dd></div>
+            <div><dt>Sessions</dt><dd>${fmt(metrics.sessions)}</dd></div>
+            <div><dt>Active days</dt><dd>${fmt(activeDays)}</dd></div>
+            <div><dt>Jumps</dt><dd>${fmt(c.jumps)} <span>(auto ${fmt(c.jumpsAuto)})</span></dd></div>
+            <div><dt>With question</dt><dd>${fmt(c.jumpsWithQuestion)} <span>(${qPct}%)</span></dd></div>
+            <div><dt>Shares</dt><dd>${fmt(c.shares)} <span>(${sharePct}%)</span></dd></div>
+            <div><dt>Custom adds</dt><dd>${fmt(c.customAdds)}</dd></div>
+            <div><dt>Resets</dt><dd>${fmt(c.resets)}</dd></div>
+            <div><dt>Settings opens</dt><dd>${fmt(c.settingsOpens)}</dd></div>
+            <div><dt>Tune opens</dt><dd>${fmt(c.tuneOpens)}</dd></div>
+            <div><dt>Sound toggled</dt><dd>${fmt(c.soundToggled)}</dd></div>
+            <div><dt>Narrator toggled</dt><dd>${fmt(c.narratorToggled)}</dd></div>
+            <div><dt>First jump</dt><dd>${daysSince(metrics.firstJumpAt)}</dd></div>
+            <div><dt>Last jump</dt><dd>${daysSince(metrics.lastJumpAt)}</dd></div>
+          </dl>
+          ${top.length ? `<div class="metrics-top"><strong>Top tiles</strong><ul>${top.map((t) => `<li><span>${t.label}</span><em>${fmt(t.hits)}</em></li>`).join('')}</ul></div>` : ''}
+          <div class="metrics-actions">
+            <button type="button" class="metrics-clear">Clear metrics</button>
+          </div>
+        `;
+        panel.querySelector('.metrics-close').addEventListener('click', () => panel.remove());
+        panel.querySelector('.metrics-clear').addEventListener('click', () => {
+          if (!confirm('Clear all locally-stored metrics?')) return;
+          try { localStorage.removeItem(METRICS_STORAGE_KEY); } catch (_) {}
+          Object.assign(metrics, METRICS_DEFAULTS());
+          saveMetrics();
+          render();
+        });
+      }
+
+      render();
+      // Live-refresh so counters tick up as the user interacts.
+      setInterval(render, 1500);
+    })();
   </script>
 </body>
 </html>
