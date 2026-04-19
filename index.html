@@ -1469,6 +1469,54 @@
       "The Users\nAre Wrong",
     ];
 
+    // Keyword tags parallel to `conclusions`. When the user asks a
+    // question, matches here boost the corresponding tile's landing
+    // weight. Each tag is matched as a whole word (case-insensitive).
+    // Custom user-added conclusions have no tags and fall through to
+    // uniform weighting — acceptable because the humor of a keyword
+    // hit is the payoff; a miss is just normal random behavior.
+    const CONCLUSION_TAGS = [
+      // 0 Someone Else's Fault
+      ['blame', 'fault', 'responsible', 'mistake', 'broke', 'caused', 'who', 'whose', 'mine'],
+      // 1 More Meetings
+      ['meeting', 'meetings', 'schedule', 'discuss', 'sync', 'align', 'process', 'workshop', 'standup', 'kickoff'],
+      // 2 Blame The Intern
+      ['intern', 'junior', 'new', 'rookie', 'trainee', 'newbie', 'hire'],
+      // 3 Not My Job
+      ['job', 'mine', 'own', 'owner', 'responsibility', 'task', 'assigned', 'role', 'supposed'],
+      // 4 Ship It Anyway
+      ['ship', 'deploy', 'release', 'launch', 'push', 'prod', 'production', 'live', 'friday', 'tonight', 'merge'],
+      // 5 It Worked On My Machine
+      ['bug', 'bugs', 'broken', 'broke', 'error', 'crash', 'fail', 'fails', 'works', 'work', 'test', 'tests', 'localhost', 'staging', 'machine', 'computer', 'laptop'],
+      // 6 Reorg Will Fix It
+      ['fix', 'solve', 'structure', 'reorg', 'restructure', 'management', 'org', 'team', 'teams', 'department'],
+      // 7 Form a Committee
+      ['decide', 'decision', 'approval', 'approve', 'committee', 'group', 'vote', 'consensus', 'alignment', 'stakeholders'],
+      // 8 Always Done It This Way
+      ['change', 'different', 'propose', 'tradition', 'always', 'historically', 'refactor', 'rewrite', 'migrate'],
+      // 9 Not Enough Budget
+      ['money', 'budget', 'cost', 'afford', 'fund', 'funds', 'spend', 'expense', 'buy', 'pay', 'price', 'hire', 'salary', 'raise'],
+      // 10 Someone Else Is Handling It
+      ['owner', 'assign', 'already', 'handling', 'covered', 'taken', 'delegated', 'done', 'who'],
+      // 11 The Users Are Wrong
+      ['user', 'users', 'customer', 'customers', 'client', 'clients', 'feedback', 'complain', 'complaint', 'request', 'feature', 'ux'],
+    ];
+
+    function scoreConclusionsForQuestion(question) {
+      const normalized = (question || '').toLowerCase();
+      if (!normalized) return null;
+      const scores = CONCLUSION_TAGS.map((tags) => {
+        if (!tags || !tags.length) return 0;
+        let score = 0;
+        for (const tag of tags) {
+          const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (new RegExp(`\\b${escaped}\\b`, 'i').test(normalized)) score += 1;
+        }
+        return score;
+      });
+      return scores.some((s) => s > 0) ? scores : null;
+    }
+
     const mat = document.getElementById('mat');
     const matWrapper = document.querySelector('.mat-wrapper');
     const person = document.getElementById('person');
@@ -2024,6 +2072,28 @@
       if (internBiasMode.checked) {
         const internZone = landingPool.find((zoneEl) => Number(zoneEl.dataset.index) === internIndex);
         if (internZone && Math.random() < config.internBiasChance) return internZone;
+      }
+
+      // Context bias: if the user asked a question, tilt the roll toward
+      // conclusions whose tags match. Base weight 1, +3 per keyword hit,
+      // so a 2-match tile is ~7× a non-matching tile — enough to feel
+      // intentional, not enough to feel deterministic.
+      const question = askInput && askInput.value ? askInput.value.trim() : '';
+      const scores = scoreConclusionsForQuestion(question);
+      if (scores) {
+        const weights = landingPool.map((zoneEl) => {
+          const idx = Number(zoneEl.dataset.index);
+          return 1 + (scores[idx] || 0) * 3;
+        });
+        let total = 0;
+        for (const w of weights) total += w;
+        if (total > 0) {
+          let pick = Math.random() * total;
+          for (let i = 0; i < landingPool.length; i++) {
+            pick -= weights[i];
+            if (pick <= 0) return landingPool[i];
+          }
+        }
       }
 
       return randomFrom(landingPool);
