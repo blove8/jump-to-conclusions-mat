@@ -853,7 +853,8 @@
     }
 
     .config-row input[type="number"],
-    .config-row input[type="text"] {
+    .config-row input[type="text"],
+    .config-row select {
       width: 100%;
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: var(--radius-sm);
@@ -862,12 +863,55 @@
       color: var(--ink);
       font-family: inherit;
       font-size: 0.9rem;
+      -webkit-appearance: none;
+      appearance: none;
     }
 
-    .config-row input:focus {
+    .config-row select {
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--ink-dim) 50%),
+        linear-gradient(-45deg, transparent 50%, var(--ink-dim) 50%);
+      background-position:
+        calc(100% - 14px) 55%,
+        calc(100% - 9px) 55%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+      padding-right: 2rem;
+    }
+
+    .config-row input:focus,
+    .config-row select:focus {
       outline: none;
       border-color: rgba(255, 210, 77, 0.55);
-      background: rgba(255, 210, 77, 0.06);
+      background-color: rgba(255, 210, 77, 0.06);
+    }
+
+    .config-row--wide label {
+      justify-content: space-between;
+    }
+
+    .voice-test-btn {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(214, 168, 60, 0.4);
+      border-radius: 6px;
+      padding: 0.2rem 0.55rem;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .voice-test-btn:hover {
+      background: rgba(214, 168, 60, 0.12);
+      border-color: var(--accent);
+    }
+
+    .voice-test-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .config-footer {
@@ -1406,6 +1450,15 @@
           <label for="cfgNarratorPitch">Narrator pitch <span class="config-value" id="narratorPitchValue"></span></label>
           <input type="range" id="cfgNarratorPitch" min="0.5" max="1.5" step="0.05" aria-label="Narrator pitch">
         </div>
+        <div class="config-row config-row--wide">
+          <label for="cfgNarratorVoice">
+            <span>Narrator voice</span>
+            <button type="button" class="voice-test-btn" id="narratorVoiceTest" aria-label="Play a sample with the selected voice">Test</button>
+          </label>
+          <select id="cfgNarratorVoice" aria-label="Narrator voice">
+            <option value="">Auto (best available)</option>
+          </select>
+        </div>
         <div class="config-row">
           <label for="cfgPersonEmoji">Person emoji</label>
           <input type="text" id="cfgPersonEmoji" maxlength="4" aria-label="Person emoji">
@@ -1815,6 +1868,7 @@
       narratorRate: 0.95,
       narratorPitch: 0.85,
       personEmoji: '🧍',
+      narratorVoiceURI: '',
     });
     const config = { ...CONFIG_DEFAULTS };
 
@@ -1827,6 +1881,7 @@
       narratorRate:       { el: 'cfgNarratorRate',      value: 'narratorRateValue',      type: 'float', min: 0.5, max: 1.5, decimals: 2 },
       narratorPitch:      { el: 'cfgNarratorPitch',     value: 'narratorPitchValue',     type: 'float', min: 0.5, max: 1.5, decimals: 2 },
       personEmoji:        { el: 'cfgPersonEmoji',       type: 'string', maxLength: 4 },
+      narratorVoiceURI:   { el: 'cfgNarratorVoice',     type: 'string', maxLength: 260 },
     };
 
     function clamp(value, min, max) {
@@ -2031,6 +2086,12 @@
       if (!('speechSynthesis' in window)) return null;
       const voices = window.speechSynthesis.getVoices();
       if (!voices || voices.length === 0) return null;
+      // Honor user-picked voice first; if it's no longer installed, fall
+      // through to the auto-selection heuristic.
+      if (config.narratorVoiceURI) {
+        const saved = voices.find((v) => v.voiceURI === config.narratorVoiceURI);
+        if (saved) return saved;
+      }
       return (
         voices.find((v) => v.lang === 'en-US' && v.default) ||
         voices.find((v) => v.lang === 'en-US') ||
@@ -2538,6 +2599,62 @@
     loadConfig();
     renderConfigInputs();
     bindConfigInputs();
+
+    // --- Narrator voice picker ---------------------------------------
+    (function mountVoicePicker() {
+      if (!('speechSynthesis' in window)) return;
+      const select = document.getElementById('cfgNarratorVoice');
+      const testBtn = document.getElementById('narratorVoiceTest');
+      if (!select) return;
+
+      function describeVoice(v) {
+        const lang = v.lang ? ` · ${v.lang}` : '';
+        const local = v.localService ? '' : ' ☁';
+        return `${v.name}${lang}${local}`;
+      }
+
+      function populate() {
+        const voices = window.speechSynthesis.getVoices() || [];
+        // Keep "Auto" at top; rebuild the rest.
+        while (select.options.length > 1) select.remove(1);
+        const english = voices
+          .filter((v) => v.lang && /^en/i.test(v.lang))
+          .sort((a, b) => {
+            // Default first, then localService, then alphabetic.
+            if ((b.default ? 1 : 0) !== (a.default ? 1 : 0)) return (b.default ? 1 : 0) - (a.default ? 1 : 0);
+            if ((b.localService ? 1 : 0) !== (a.localService ? 1 : 0)) return (b.localService ? 1 : 0) - (a.localService ? 1 : 0);
+            return a.name.localeCompare(b.name);
+          });
+        for (const v of english) {
+          const opt = document.createElement('option');
+          opt.value = v.voiceURI;
+          opt.textContent = describeVoice(v);
+          select.appendChild(opt);
+        }
+        // Restore saved selection if still present.
+        if (config.narratorVoiceURI && voices.some((v) => v.voiceURI === config.narratorVoiceURI)) {
+          select.value = config.narratorVoiceURI;
+        } else {
+          select.value = '';
+        }
+      }
+
+      populate();
+      window.speechSynthesis.addEventListener?.('voiceschanged', populate);
+
+      testBtn?.addEventListener('click', () => {
+        try { window.speechSynthesis.resume(); } catch (_) {}
+        try { window.speechSynthesis.cancel(); } catch (_) {}
+        const utter = new SpeechSynthesisUtterance(
+          'Per the Initech Decision Engine, this is how I sound.'
+        );
+        utter.rate = config.narratorRate;
+        utter.pitch = config.narratorPitch;
+        const picked = pickEnglishVoice();
+        if (picked) utter.voice = picked;
+        try { window.speechSynthesis.speak(utter); } catch (_) {}
+      });
+    })();
 
     // --- Permalink reproducer --------------------------------------
     // ?v=<tileIdx>&q=<question>&t=<unixSeconds>
