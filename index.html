@@ -1517,6 +1517,67 @@
       return scores.some((s) => s > 0) ? scores : null;
     }
 
+    // Per-tile verdict formatters. When a question is present, each tile
+    // delivers the joke as a direct answer to the extracted subject —
+    // "Push to prod Friday? Ship it anyway." Empty question falls back
+    // to the canonical tile name.
+    const CONCLUSION_FORMATTERS = [
+      (s) => s ? `${cap(s)}? That's someone else's fault.`        : "It's someone else's fault.",
+      (s) => s ? `${cap(s)}? We'll need more meetings.`           : "We need more meetings.",
+      (s) => s ? `${cap(s)}? Blame the intern.`                   : "Blame the intern.",
+      (s) => s ? `${cap(s)}? Not my job.`                         : "That's not my job.",
+      (s) => s ? `${cap(s)}? Ship it anyway.`                     : "Ship it anyway.",
+      (s) => s ? `${cap(s)}? Worked on my machine.`               : "It worked on my machine.",
+      (s) => s ? `${cap(s)}? A reorg will fix it.`                : "Reorg will fix it.",
+      (s) => s ? `${cap(s)}? Let's form a committee.`             : "Let's form a committee.",
+      (s) => s ? `${cap(s)}? We've always done it this way.`      : "We've always done it this way.",
+      (s) => s ? `${cap(s)}? Not enough budget.`                  : "Not enough budget.",
+      (s) => s ? `${cap(s)}? Someone else is handling it.`        : "Someone else is handling it.",
+      (s) => s ? `${cap(s)}? The users are wrong.`                : "The users are wrong.",
+    ];
+
+    function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+
+    // Strip common question-word prefixes and trailing punctuation so the
+    // remaining subject reads as something the Engine can answer with a
+    // follow-up clause. "Should I push to prod Friday?" → "push to prod Friday".
+    function extractSubject(question) {
+      if (!question) return '';
+      // Preserve original casing so proper nouns ("Friday") survive.
+      let s = String(question).trim().replace(/[?!.]+$/u, '').trim();
+      if (!s) return '';
+      const prefixes = [
+        // "How much / how many / how long" → strip both words.
+        /^how\s+(much|many|often|long|soon|far)\s+(is|are|was|were|do|does|did|should|can|could|will|would)?\s*/i,
+        // Wh + auxiliary pairs, so "Who is the culprit" → "the culprit"
+        // rather than "is the culprit".
+        /^(why|what|when|where|how|who|whose|which)\s+(is|are|was|were|do|does|did|should|can|could|will|would)\s+/i,
+        // Yes/no auxiliaries on their own.
+        /^should (i|we|they|it|he|she|you)\s+/i, /^shall (i|we)\s+/i,
+        /^can (i|we|they|it|he|she|you)\s+/i,    /^could (i|we|they|it|he|she|you)\s+/i,
+        /^will (i|we|they|it|he|she|you)\s+/i,   /^would (i|we|they|it|he|she|you)\s+/i,
+        /^do (i|we|they|you)\s+/i,               /^does (it|he|she)\s+/i,
+        /^did (i|we|they|it|he|she|you)\s+/i,
+        /^is (it|this|that|there|he|she)\s+/i,   /^are (we|they|you|there|these|those)\s+/i,
+        // Bare wh-words last.
+        /^(why|what|when|where|how|who|whose|which)\s+/i,
+      ];
+      for (const p of prefixes) {
+        const stripped = s.replace(p, '');
+        if (stripped !== s) { s = stripped; break; }
+      }
+      if (s.length > 48) s = s.slice(0, 45).replace(/\s+\S*$/, '') + '…';
+      // Lowercase only the very first character — preserves mid-sentence
+      // proper nouns while letting cap() set the final leading capital.
+      return s[0].toLowerCase() + s.slice(1);
+    }
+
+    function buildVerdictText(tileIdx, question) {
+      const formatter = CONCLUSION_FORMATTERS[tileIdx];
+      if (!formatter) return (conclusions[tileIdx] || '').replace(/\n/g, ' ');
+      return formatter(extractSubject(question));
+    }
+
     const mat = document.getElementById('mat');
     const matWrapper = document.querySelector('.mat-wrapper');
     const person = document.getElementById('person');
@@ -2125,8 +2186,8 @@
       const zones = Array.from(mat.querySelectorAll('.zone'));
       const landedZone = chooseLandingZone(zones);
       const picked = Number(landedZone.dataset.index);
-      const selectedText = conclusions[picked].replace(/\n/g, ' ');
       activeQuestion = currentQuestion();
+      const selectedText = buildVerdictText(picked, activeQuestion);
       logEvent('jump', { tile: picked, hasQuestion: activeQuestion.length > 0 });
       appendArchiveEntry({ verdict: selectedText, question: activeQuestion, tileIdx: picked });
 
@@ -2506,7 +2567,7 @@
         requestAnimationFrame(() => placePerson(zone, false));
       }
 
-      const selectedText = conclusions[idx].replace(/\n/g, ' ');
+      const selectedText = buildVerdictText(idx, activeQuestion);
       conclusionLabel.textContent = verdictLabelFor(activeQuestion);
       conclusionText.classList.remove('empty');
       conclusionText.textContent = selectedText;
