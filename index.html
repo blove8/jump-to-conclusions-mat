@@ -1720,12 +1720,163 @@
       return url.toString();
     }
 
+    // --- Canvas memo renderer --------------------------------------
+    // Renders the current memo as a 1200×800 PNG that keeps the
+    // typography, meta row, Re: line, watermark, and brand block. This
+    // is what people share — the text-only share threw away the entire
+    // aesthetic.
+    async function renderVerdictToBlob() {
+      if (typeof OffscreenCanvas === 'undefined' && typeof document === 'undefined') return null;
+      try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+
+      const W = 1200, H = 800, PAD = 80;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      // Background (manila)
+      ctx.fillStyle = '#f4ead4';
+      ctx.fillRect(0, 0, W, H);
+      // Very faint vignette so the paper has a center
+      const vignette = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.75);
+      vignette.addColorStop(0, 'rgba(24, 19, 24, 0)');
+      vignette.addColorStop(1, 'rgba(24, 19, 24, 0.06)');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, W, H);
+
+      const ink = '#181318';
+      const inkMuted = 'rgba(24, 19, 24, 0.55)';
+      const rule = '#c8b890';
+      const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
+      const display = 'Fraunces, "Times New Roman", Georgia, serif';
+
+      // Meta row
+      ctx.textBaseline = 'top';
+      ctx.font = `500 26px ${mono}`;
+      ctx.fillStyle = inkMuted;
+      ctx.textAlign = 'left';
+      ctx.fillText('FROM: DECISION ENGINE', PAD, PAD);
+      const now = new Date();
+      const date = now.toLocaleDateString([], { month: 'short', day: '2-digit' }).toUpperCase();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      ctx.textAlign = 'right';
+      ctx.fillText(`FILED ${date} · ${time}`, W - PAD, PAD);
+
+      // Hairline
+      ctx.fillStyle = rule;
+      ctx.fillRect(PAD, PAD + 58, W - 2 * PAD, 1);
+
+      // Re: line (UPPERCASE, mono, left-aligned)
+      ctx.textAlign = 'left';
+      ctx.font = `500 24px ${mono}`;
+      ctx.fillStyle = inkMuted;
+      const re = (conclusionLabel.textContent || '').toUpperCase();
+      const reLines = wrapCanvasLines(ctx, re, W - 2 * PAD);
+      let reY = PAD + 88;
+      for (const line of reLines) { ctx.fillText(line, PAD, reY); reY += 32; }
+
+      // Verdict — big italic Fraunces, auto-sized to fit the block
+      const verdictText = (conclusionText.textContent || '').trim();
+      const verdictTop = reY + 28;
+      const verdictBlockH = H - PAD - 160 - verdictTop;
+      let verdictFontSize = 96;
+      let verdictLines = [];
+      while (verdictFontSize >= 44) {
+        ctx.font = `italic 700 ${verdictFontSize}px ${display}`;
+        verdictLines = wrapCanvasLines(ctx, verdictText, W - 2 * PAD);
+        const blockH = verdictLines.length * verdictFontSize * 1.12;
+        if (blockH <= verdictBlockH) break;
+        verdictFontSize -= 4;
+      }
+      const lineHeight = verdictFontSize * 1.12;
+      const verdictHeight = verdictLines.length * lineHeight;
+      const verdictStartY = verdictTop + Math.max(0, (verdictBlockH - verdictHeight) / 2);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = ink;
+      ctx.font = `italic 700 ${verdictFontSize}px ${display}`;
+      for (let i = 0; i < verdictLines.length; i++) {
+        ctx.fillText(verdictLines[i], PAD, verdictStartY + i * lineHeight);
+      }
+
+      // Brand block at bottom
+      ctx.textAlign = 'center';
+      ctx.font = `italic 700 28px ${display}`;
+      ctx.fillStyle = ink;
+      ctx.fillText('JUMP TO CONCLUSIONS MAT™', W / 2, H - PAD - 60);
+
+      ctx.font = `500 18px ${mono}`;
+      ctx.fillStyle = inkMuted;
+      ctx.fillText('INITECH · INTEROFFICE · CONFIDENTIAL', W / 2, H - PAD - 24);
+
+      return new Promise((resolve) => {
+        try { canvas.toBlob((blob) => resolve(blob), 'image/png'); }
+        catch (_) { resolve(null); }
+      });
+    }
+
+    function wrapCanvasLines(ctx, text, maxWidth) {
+      if (!text) return [];
+      const lines = [];
+      // Honor explicit newlines first.
+      const paragraphs = String(text).split(/\n+/);
+      for (const para of paragraphs) {
+        const words = para.trim().split(/\s+/).filter(Boolean);
+        let current = '';
+        for (const word of words) {
+          const test = current ? `${current} ${word}` : word;
+          if (ctx.measureText(test).width > maxWidth && current) {
+            lines.push(current);
+            current = word;
+          } else {
+            current = test;
+          }
+        }
+        if (current) lines.push(current);
+      }
+      return lines;
+    }
+
     async function shareVerdict() {
       const text = conclusionText.textContent?.trim();
       if (!text) return;
       const permalink = buildPermalink(lastPicked, activeQuestion);
       const q = activeQuestion ? `I asked "${activeQuestion}" and ` : 'I ';
       const message = `${q}jumped to a conclusion: "${text}" — via Jump to Conclusions Mat™`;
+
+      // Try image share via Web Share API with files.
+      try {
+        const blob = await renderVerdictToBlob();
+        if (blob) {
+          const file = new File([blob], 'verdict.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+            await navigator.share({ title: 'Jump to Conclusions Mat™', text: message, url: permalink, files: [file] });
+            logEvent('share');
+            return;
+          }
+          // No file-share support? Download the PNG and copy text.
+          const objUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objUrl;
+          a.download = `jtc-mat-${Date.now()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
+          if (navigator.clipboard) {
+            try { await navigator.clipboard.writeText(`${message}\n${permalink}`); } catch (_) {}
+          }
+          shareBtn.textContent = 'Saved ✓';
+          setTimeout(() => { shareBtn.innerHTML = '<span aria-hidden="true">↗</span> Reproduce'; }, 1800);
+          logEvent('share');
+          return;
+        }
+      } catch (_) {
+        // Render failed (font/canvas/memory). Fall through to text share.
+      }
+
+      // Ultimate fallback: text-only share / clipboard.
       try {
         if (navigator.share) {
           await navigator.share({ title: 'Jump to Conclusions Mat™', text: message, url: permalink });
