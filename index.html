@@ -307,6 +307,44 @@
     .ask-clear:active { transform: translateY(-50%) scale(0.92); }
     .ask-intake.has-value .ask-clear { display: inline-flex; }
 
+    .ask-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-top: 0.45rem;
+      padding: 0.45rem 0.7rem;
+      background: rgba(214, 168, 60, 0.08);
+      border: 1px solid rgba(214, 168, 60, 0.35);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      animation: ask-hint-in 0.35s var(--ease-spring);
+    }
+
+    .ask-hint[hidden] { display: none; }
+
+    @keyframes ask-hint-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ask-hint-dismiss {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0.25rem;
+      opacity: 0.7;
+    }
+
+    .ask-hint-dismiss:hover { opacity: 1; }
+
     .mat-wrapper {
       position: relative;
       width: 100%;
@@ -731,12 +769,12 @@
       line-height: 1.05;
       margin-top: 0.4rem;
       opacity: 0;
-      transform: translateY(6px);
-      transition: opacity 0.4s var(--ease-out), transform 0.5s var(--ease-spring);
+      transform: translateY(8px) scale(0.97);
+      transition: opacity 0.45s var(--ease-out), transform 0.55s var(--ease-spring);
       max-width: 100%;
     }
 
-    .conclusion-text.visible { opacity: 1; transform: translateY(0); }
+    .conclusion-text.visible { opacity: 1; transform: translateY(0) scale(1); }
 
     .conclusion-text.empty {
       font-style: italic;
@@ -1358,6 +1396,10 @@
       >
       <button type="button" class="ask-clear" id="askClear" aria-label="Clear question" title="Clear">×</button>
     </div>
+    <aside class="ask-hint" id="askHint" hidden>
+      <span>↑ Type a question first — the Engine tailors its verdict to it.</span>
+      <button type="button" class="ask-hint-dismiss" id="askHintDismiss" aria-label="Dismiss tip">×</button>
+    </aside>
   </form>
 
   <div class="mat-wrapper">
@@ -1686,6 +1728,35 @@
     function currentQuestion() {
       return askInput.value.trim().slice(0, 120);
     }
+
+    // First-run hint: appear only after the user's first JUMP without
+    // a question. Dismiss on × click, on the next focus, or on a
+    // successful jump-with-question. Persisted in localStorage.
+    const HINT_KEY = 'jtcmat.hint.ask.v1';
+    function dismissAskHint(markSeen) {
+      const hintEl = document.getElementById('askHint');
+      if (hintEl) hintEl.hidden = true;
+      if (markSeen) {
+        try { localStorage.setItem(HINT_KEY, '1'); } catch (_) {}
+      }
+    }
+    function maybeShowAskHint(hadQuestion) {
+      if (hadQuestion) {
+        // They used the feature; the hint is no longer needed.
+        dismissAskHint(true);
+        return;
+      }
+      let seen = null;
+      try { seen = localStorage.getItem(HINT_KEY); } catch (_) {}
+      if (seen) return;
+      const hintEl = document.getElementById('askHint');
+      if (hintEl) hintEl.hidden = false;
+    }
+    document.getElementById('askHintDismiss').addEventListener('click', () => dismissAskHint(true));
+    askInput.addEventListener('focus', () => {
+      const hintEl = document.getElementById('askHint');
+      if (hintEl && !hintEl.hidden) dismissAskHint(true);
+    });
 
     function verdictLabelFor(question) {
       if (!question) return 'Re: Your most pressing question';
@@ -2417,18 +2488,23 @@
       // queued without starting.
       narrate(selectedText);
 
-      // Quick hop animation across random zones before landing
+      // Quick hop animation across random zones before landing.
+      // The final 3 hops decelerate so the mat "comes to rest" like a
+      // game-show reel, and the verdict reveal gets a 400ms anticipation
+      // beat after the boing lands — more show, less slot machine.
       let hops = 0;
       const totalHops = (chaosMode.checked ? config.hopCountBase + 4 : config.hopCountBase) + Math.floor(Math.random() * 4);
+      const baseHop = config.hopIntervalMs;
+      function hopDelayForRemaining(remaining) {
+        if (remaining === 0) return Math.round(baseHop * 2.5);
+        if (remaining === 1) return Math.round(baseHop * 1.8);
+        if (remaining === 2) return Math.round(baseHop * 1.35);
+        return baseHop;
+      }
 
       await new Promise((resolve) => {
-        const hopInterval = setInterval(() => {
-          const tempZone = randomFrom(zones);
-          placePerson(tempZone, hops % 2 === 0);
-          hops++;
+        function doHop() {
           if (hops >= totalHops) {
-            clearInterval(hopInterval);
-
             // Final landing
             placePerson(landedZone, true);
             landedZone.classList.add('active');
@@ -2452,6 +2528,7 @@
             }
             lastPicked = picked;
 
+            // Anticipation beat: let the landing register, then reveal.
             setTimeout(() => {
               conclusionText.classList.add('visible');
               jumpCountEl.textContent = `${jumpCount} conclusion${jumpCount !== 1 ? 's' : ''} jumped to`;
@@ -2459,10 +2536,18 @@
               shareBtn.hidden = false;
               document.body.classList.add('has-jumped');
               updateStatsLine();
+              maybeShowAskHint(activeQuestion.length > 0);
               resolve();
-            }, 150);
+            }, 420);
+            return;
           }
-        }, config.hopIntervalMs);
+
+          const tempZone = randomFrom(zones);
+          placePerson(tempZone, hops % 2 === 0);
+          hops++;
+          setTimeout(doHop, hopDelayForRemaining(totalHops - hops));
+        }
+        doHop();
       });
 
       isJumping = false;
