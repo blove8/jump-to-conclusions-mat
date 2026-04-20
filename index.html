@@ -465,18 +465,18 @@
       content: attr(data-hit);
       position: absolute;
       top: 3px;
-      right: 4px;
-      min-width: 13px;
-      height: 13px;
-      padding: 0 4px;
-      border-radius: 7px;
-      background: rgba(0, 0, 0, 0.32);
-      color: rgba(255, 240, 210, 0.95);
+      right: 3px;
+      min-width: 11px;
+      height: 11px;
+      padding: 0 3px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.34);
+      color: rgba(255, 240, 210, 0.92);
       font-family: var(--mono);
       font-style: normal;
-      font-size: 0.52rem;
+      font-size: 0.44rem;
       font-weight: 500;
-      line-height: 13px;
+      line-height: 11px;
       text-align: center;
       letter-spacing: 0;
       pointer-events: none;
@@ -492,7 +492,7 @@
 
     .person {
       position: absolute;
-      font-size: 1.95rem;
+      font-size: 1.65rem;
       pointer-events: none;
       transition: left 0.45s var(--ease-spring), top 0.45s var(--ease-spring);
       z-index: 10;
@@ -2392,12 +2392,13 @@
     function getZoneLandingPosition(zoneEl) {
       const matRect = mat.getBoundingClientRect();
       const zoneRect = zoneEl.getBoundingClientRect();
-      // Anchor the avatar so it overhangs the tile's upper-left corner —
-      // most of him sits outside the tile, only the inside heel and head
-      // overlap the tile, leaving the centered title copy readable.
+      // Sit in the tile's upper-left, fully inside. Previous -10 / -4
+      // overhang looked good on single-tile previews but on the grid it
+      // intruded onto the neighbour above; keep it inside so the avatar
+      // is always clearly on the tile it landed on.
       return {
-        x: zoneRect.left - matRect.left - 4,
-        y: zoneRect.top  - matRect.top  - 4,
+        x: zoneRect.left - matRect.left + 3,
+        y: zoneRect.top  - matRect.top  + 3,
       };
     }
 
