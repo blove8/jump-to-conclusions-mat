@@ -117,8 +117,18 @@
       z-index: 1;
       width: 100%;
       max-width: 640px;
-      margin-bottom: 1.4rem;
+      margin-bottom: 0;
       text-align: center;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      margin: -1px; padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     .kicker {
@@ -218,7 +228,7 @@
       border: 0;
       height: 1px;
       background: var(--rule);
-      margin: 1.1rem auto 0;
+      margin: 0.25rem auto 0;
       width: 60%;
       max-width: 240px;
     }
@@ -278,6 +288,122 @@
       .pin-tl, .pin-bl { left: 5px; }
       .pin-tr, .pin-br { right: 5px; }
     }
+
+    .ask-intake {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 520px;
+      margin: 0.5rem 0 0.65rem;
+    }
+
+    .ask-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.56rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      text-align: center;
+    }
+
+    .ask-row {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .ask-row input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.75rem 0.95rem;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      background: rgba(244, 234, 212, 0.035);
+      color: var(--ink);
+      font-family: var(--display);
+      font-style: italic;
+      font-size: 1rem;
+      line-height: 1.3;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+
+    .ask-intake.has-value .ask-row input {
+      padding-right: 2.25rem;
+    }
+
+    .ask-row input::placeholder {
+      color: rgba(154, 143, 122, 0.65);
+      font-style: italic;
+    }
+
+    .ask-row input:focus {
+      outline: none;
+      border-color: rgba(214, 168, 60, 0.55);
+      background: rgba(214, 168, 60, 0.06);
+      box-shadow: 0 0 0 3px rgba(214, 168, 60, 0.12);
+    }
+
+    .ask-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 26px;
+      height: 26px;
+      border: none;
+      background: rgba(244, 234, 212, 0.08);
+      color: var(--ink-dim);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    .ask-clear:hover { background: rgba(244, 234, 212, 0.16); color: var(--ink); }
+    .ask-clear:active { transform: translateY(-50%) scale(0.92); }
+    .ask-intake.has-value .ask-clear { display: inline-flex; }
+
+    .ask-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-top: 0.45rem;
+      padding: 0.45rem 0.7rem;
+      background: rgba(214, 168, 60, 0.08);
+      border: 1px solid rgba(214, 168, 60, 0.35);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      animation: ask-hint-in 0.35s var(--ease-spring);
+    }
+
+    .ask-hint[hidden] { display: none; }
+
+    @keyframes ask-hint-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ask-hint-dismiss {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0.25rem;
+      opacity: 0.7;
+    }
+
+    .ask-hint-dismiss:hover { opacity: 1; }
 
     .mat-wrapper {
       position: relative;
@@ -396,18 +522,18 @@
       content: attr(data-hit);
       position: absolute;
       top: 3px;
-      right: 4px;
-      min-width: 13px;
-      height: 13px;
-      padding: 0 4px;
-      border-radius: 7px;
-      background: rgba(0, 0, 0, 0.32);
-      color: rgba(255, 240, 210, 0.95);
+      right: 3px;
+      min-width: 11px;
+      height: 11px;
+      padding: 0 3px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.34);
+      color: rgba(255, 240, 210, 0.92);
       font-family: var(--mono);
       font-style: normal;
-      font-size: 0.52rem;
+      font-size: 0.44rem;
       font-weight: 500;
-      line-height: 13px;
+      line-height: 11px;
       text-align: center;
       letter-spacing: 0;
       pointer-events: none;
@@ -423,7 +549,7 @@
 
     .person {
       position: absolute;
-      font-size: 1.95rem;
+      font-size: 1.65rem;
       pointer-events: none;
       transition: left 0.45s var(--ease-spring), top 0.45s var(--ease-spring);
       z-index: 10;
@@ -704,12 +830,12 @@
       line-height: 1.05;
       margin-top: 0.4rem;
       opacity: 0;
-      transform: translateY(6px);
-      transition: opacity 0.4s var(--ease-out), transform 0.5s var(--ease-spring);
+      transform: translateY(8px) scale(0.97);
+      transition: opacity 0.45s var(--ease-out), transform 0.55s var(--ease-spring);
       max-width: 100%;
     }
 
-    .conclusion-text.visible { opacity: 1; transform: translateY(0); }
+    .conclusion-text.visible { opacity: 1; transform: translateY(0) scale(1); }
 
     .conclusion-text.empty {
       font-style: italic;
@@ -834,7 +960,8 @@
     }
 
     .config-row input[type="number"],
-    .config-row input[type="text"] {
+    .config-row input[type="text"],
+    .config-row select {
       width: 100%;
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: var(--radius-sm);
@@ -843,12 +970,55 @@
       color: var(--ink);
       font-family: inherit;
       font-size: 0.9rem;
+      -webkit-appearance: none;
+      appearance: none;
     }
 
-    .config-row input:focus {
+    .config-row select {
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--ink-dim) 50%),
+        linear-gradient(-45deg, transparent 50%, var(--ink-dim) 50%);
+      background-position:
+        calc(100% - 14px) 55%,
+        calc(100% - 9px) 55%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+      padding-right: 2rem;
+    }
+
+    .config-row input:focus,
+    .config-row select:focus {
       outline: none;
       border-color: rgba(255, 210, 77, 0.55);
-      background: rgba(255, 210, 77, 0.06);
+      background-color: rgba(255, 210, 77, 0.06);
+    }
+
+    .config-row--wide label {
+      justify-content: space-between;
+    }
+
+    .voice-test-btn {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(214, 168, 60, 0.4);
+      border-radius: 6px;
+      padding: 0.2rem 0.55rem;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .voice-test-btn:hover {
+      background: rgba(214, 168, 60, 0.12);
+      border-color: var(--accent);
+    }
+
+    .voice-test-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .config-footer {
@@ -873,6 +1043,152 @@
     .footer-archive {
       font-size: 0.66rem;
       letter-spacing: 0.22em;
+    }
+
+    /* Metrics overlay — ?metrics=1 only */
+    .metrics-panel {
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + 12px);
+      right: 12px;
+      z-index: 40;
+      width: min(280px, calc(100vw - 24px));
+      max-height: min(70dvh, 560px);
+      overflow-y: auto;
+      background: rgba(18, 14, 22, 0.95);
+      border: 1px solid rgba(214, 168, 60, 0.35);
+      border-radius: 10px;
+      padding: 0.75rem 0.85rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--ink);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .metrics-panel header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 0.55rem;
+    }
+
+    .metrics-panel header strong {
+      font-weight: 500;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .metrics-close {
+      background: transparent;
+      border: none;
+      color: var(--ink-dim);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0.3rem;
+    }
+
+    .metrics-close:hover { color: var(--ink); }
+
+    .metrics-panel dl {
+      display: grid;
+      gap: 0.22rem 0.6rem;
+      margin: 0;
+    }
+
+    .metrics-panel dl > div {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .metrics-panel dt {
+      color: var(--ink-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.6rem;
+    }
+
+    .metrics-panel dd {
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .metrics-panel dd span {
+      color: var(--ink-dim);
+      margin-left: 0.25rem;
+    }
+
+    .metrics-top {
+      margin-top: 0.7rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .metrics-top strong {
+      display: block;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-size: 0.6rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .metrics-top ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .metrics-top li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .metrics-top li span {
+      color: var(--ink);
+      font-family: var(--ui);
+      font-size: 0.7rem;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .metrics-top li em {
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .metrics-actions {
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .metrics-clear {
+      background: transparent;
+      color: var(--ink-dim);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      font-family: inherit;
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .metrics-clear:hover {
+      border-color: var(--accent);
+      color: var(--accent);
     }
 
     footer a {
@@ -1016,6 +1332,75 @@
       border-color: rgba(244, 234, 212, 0.3);
     }
 
+    .archive-summary {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .archive-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .archive-entry {
+      padding: 0.85rem 0.95rem 0.95rem;
+      background: rgba(244, 234, 212, 0.04);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .archive-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.6rem;
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+    }
+
+    .archive-meta .archive-tile {
+      color: var(--accent);
+    }
+
+    .archive-re {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+    }
+
+    .archive-verdict {
+      font-family: var(--display);
+      font-style: italic;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      line-height: 1.18;
+    }
+
+    .archive-empty {
+      padding: 1.5rem 0.5rem;
+      text-align: center;
+      font-family: var(--display);
+      font-style: italic;
+      color: var(--ink-dim);
+    }
+
     /* Dock quick-toggles (sound + narrator pill icons) */
     .dock-toggle {
       flex: 0 0 auto;
@@ -1056,6 +1441,27 @@
     </p>
     <hr>
   </header>
+
+  <form class="ask-intake" id="askForm" autocomplete="off" aria-label="Ask the Decision Engine a question">
+    <label class="sr-only" for="askInput">Submit query to the Decision Engine</label>
+    <div class="ask-row">
+      <input
+        id="askInput"
+        name="q"
+        type="text"
+        maxlength="120"
+        placeholder="Should I push to prod on a Friday?"
+        aria-label="Your question for the Decision Engine"
+        inputmode="text"
+        spellcheck="true"
+      >
+      <button type="button" class="ask-clear" id="askClear" aria-label="Clear question" title="Clear">×</button>
+    </div>
+    <aside class="ask-hint" id="askHint" hidden>
+      <span>↑ Type a question first — the Engine tailors its verdict to it.</span>
+      <button type="button" class="ask-hint-dismiss" id="askHintDismiss" aria-label="Dismiss tip">×</button>
+    </aside>
+  </form>
 
   <figure class="cubicle" aria-label="The Mat, mounted on the cubicle wall">
     <span class="pin pin-tl" aria-hidden="true"></span>
@@ -1114,6 +1520,7 @@
         </div>
         <div class="status-line" id="statsLine"></div>
         <div class="sheet-actions">
+          <button class="btn-secondary" id="openArchiveBtn">🗄 Open archive →</button>
           <button class="btn-secondary" id="openConfigBtn">🎛 Tune the engine →</button>
           <button class="btn-secondary btn-secondary-quiet" id="resetBtn">↺ Reset stats</button>
         </div>
@@ -1160,6 +1567,15 @@
           <label for="cfgNarratorPitch">Narrator pitch <span class="config-value" id="narratorPitchValue"></span></label>
           <input type="range" id="cfgNarratorPitch" min="0.5" max="1.5" step="0.05" aria-label="Narrator pitch">
         </div>
+        <div class="config-row config-row--wide">
+          <label for="cfgNarratorVoice">
+            <span>Narrator voice</span>
+            <button type="button" class="voice-test-btn" id="narratorVoiceTest" aria-label="Play a sample with the selected voice">Test</button>
+          </label>
+          <select id="cfgNarratorVoice" aria-label="Narrator voice">
+            <option value="">Auto (best available)</option>
+          </select>
+        </div>
         <div class="config-row">
           <label for="cfgPersonEmoji">Person emoji</label>
           <input type="text" id="cfgPersonEmoji" maxlength="4" aria-label="Person emoji">
@@ -1167,6 +1583,27 @@
       </div>
       <div class="config-footer">
         <button class="btn-secondary" id="restoreDefaultsBtn">Restore defaults</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="sheet" id="archiveSheet" aria-label="Verdict archive">
+    <div class="sheet-handle" data-close-sheet aria-hidden="true"></div>
+    <header class="sheet-header">
+      <div>
+        <div class="sheet-eyebrow">Records Retention · §14-B</div>
+        <div class="sheet-title">Verdict archive</div>
+      </div>
+      <button class="sheet-close" data-close-sheet aria-label="Close">×</button>
+    </header>
+    <div class="sheet-body">
+      <div class="archive-summary" id="archiveSummary" aria-live="polite"></div>
+      <ol class="archive-list" id="archiveList" aria-label="Filed verdicts, newest first"></ol>
+      <div class="archive-empty" id="archiveEmpty" hidden>
+        No verdicts filed yet. Jump to begin the record.
+      </div>
+      <div class="sheet-actions">
+        <button class="btn-secondary btn-secondary-quiet" id="clearArchiveBtn">Purge archive</button>
       </div>
     </div>
   </dialog>
@@ -1202,6 +1639,115 @@
       "The Users\nAre Wrong",
     ];
 
+    // Keyword tags parallel to `conclusions`. When the user asks a
+    // question, matches here boost the corresponding tile's landing
+    // weight. Each tag is matched as a whole word (case-insensitive).
+    // Custom user-added conclusions have no tags and fall through to
+    // uniform weighting — acceptable because the humor of a keyword
+    // hit is the payoff; a miss is just normal random behavior.
+    const CONCLUSION_TAGS = [
+      // 0 Someone Else's Fault
+      ['blame', 'fault', 'responsible', 'mistake', 'broke', 'caused', 'who', 'whose', 'mine'],
+      // 1 More Meetings
+      ['meeting', 'meetings', 'schedule', 'discuss', 'sync', 'align', 'process', 'workshop', 'standup', 'kickoff'],
+      // 2 Blame The Intern
+      ['intern', 'junior', 'new', 'rookie', 'trainee', 'newbie', 'hire'],
+      // 3 Not My Job
+      ['job', 'mine', 'own', 'owner', 'responsibility', 'task', 'assigned', 'role', 'supposed'],
+      // 4 Ship It Anyway
+      ['ship', 'deploy', 'release', 'launch', 'push', 'prod', 'production', 'live', 'friday', 'tonight', 'merge'],
+      // 5 It Worked On My Machine
+      ['bug', 'bugs', 'broken', 'broke', 'error', 'crash', 'fail', 'fails', 'works', 'work', 'test', 'tests', 'localhost', 'staging', 'machine', 'computer', 'laptop'],
+      // 6 Reorg Will Fix It
+      ['fix', 'solve', 'structure', 'reorg', 'restructure', 'management', 'org', 'team', 'teams', 'department'],
+      // 7 Form a Committee
+      ['decide', 'decision', 'approval', 'approve', 'committee', 'group', 'vote', 'consensus', 'alignment', 'stakeholders'],
+      // 8 Always Done It This Way
+      ['change', 'different', 'propose', 'tradition', 'always', 'historically', 'refactor', 'rewrite', 'migrate'],
+      // 9 Not Enough Budget
+      ['money', 'budget', 'cost', 'afford', 'fund', 'funds', 'spend', 'expense', 'buy', 'pay', 'price', 'hire', 'salary', 'raise'],
+      // 10 Someone Else Is Handling It
+      ['owner', 'assign', 'already', 'handling', 'covered', 'taken', 'delegated', 'done', 'who'],
+      // 11 The Users Are Wrong
+      ['user', 'users', 'customer', 'customers', 'client', 'clients', 'feedback', 'complain', 'complaint', 'request', 'feature', 'ux'],
+    ];
+
+    function scoreConclusionsForQuestion(question) {
+      const normalized = (question || '').toLowerCase();
+      if (!normalized) return null;
+      const scores = CONCLUSION_TAGS.map((tags) => {
+        if (!tags || !tags.length) return 0;
+        let score = 0;
+        for (const tag of tags) {
+          const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (new RegExp(`\\b${escaped}\\b`, 'i').test(normalized)) score += 1;
+        }
+        return score;
+      });
+      return scores.some((s) => s > 0) ? scores : null;
+    }
+
+    // Per-tile verdict formatters. When a question is present, each tile
+    // delivers the joke as a direct answer to the extracted subject —
+    // "Push to prod Friday? Ship it anyway." Empty question falls back
+    // to the canonical tile name.
+    const CONCLUSION_FORMATTERS = [
+      (s) => s ? `${cap(s)}? That's someone else's fault.`        : "It's someone else's fault.",
+      (s) => s ? `${cap(s)}? We'll need more meetings.`           : "We need more meetings.",
+      (s) => s ? `${cap(s)}? Blame the intern.`                   : "Blame the intern.",
+      (s) => s ? `${cap(s)}? Not my job.`                         : "That's not my job.",
+      (s) => s ? `${cap(s)}? Ship it anyway.`                     : "Ship it anyway.",
+      (s) => s ? `${cap(s)}? Worked on my machine.`               : "It worked on my machine.",
+      (s) => s ? `${cap(s)}? A reorg will fix it.`                : "Reorg will fix it.",
+      (s) => s ? `${cap(s)}? Let's form a committee.`             : "Let's form a committee.",
+      (s) => s ? `${cap(s)}? We've always done it this way.`      : "We've always done it this way.",
+      (s) => s ? `${cap(s)}? Not enough budget.`                  : "Not enough budget.",
+      (s) => s ? `${cap(s)}? Someone else is handling it.`        : "Someone else is handling it.",
+      (s) => s ? `${cap(s)}? The users are wrong.`                : "The users are wrong.",
+    ];
+
+    function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+
+    // Strip common question-word prefixes and trailing punctuation so the
+    // remaining subject reads as something the Engine can answer with a
+    // follow-up clause. "Should I push to prod Friday?" → "push to prod Friday".
+    function extractSubject(question) {
+      if (!question) return '';
+      // Preserve original casing so proper nouns ("Friday") survive.
+      let s = String(question).trim().replace(/[?!.]+$/u, '').trim();
+      if (!s) return '';
+      const prefixes = [
+        // "How much / how many / how long" → strip both words.
+        /^how\s+(much|many|often|long|soon|far)\s+(is|are|was|were|do|does|did|should|can|could|will|would)?\s*/i,
+        // Wh + auxiliary pairs, so "Who is the culprit" → "the culprit"
+        // rather than "is the culprit".
+        /^(why|what|when|where|how|who|whose|which)\s+(is|are|was|were|do|does|did|should|can|could|will|would)\s+/i,
+        // Yes/no auxiliaries on their own.
+        /^should (i|we|they|it|he|she|you)\s+/i, /^shall (i|we)\s+/i,
+        /^can (i|we|they|it|he|she|you)\s+/i,    /^could (i|we|they|it|he|she|you)\s+/i,
+        /^will (i|we|they|it|he|she|you)\s+/i,   /^would (i|we|they|it|he|she|you)\s+/i,
+        /^do (i|we|they|you)\s+/i,               /^does (it|he|she)\s+/i,
+        /^did (i|we|they|it|he|she|you)\s+/i,
+        /^is (it|this|that|there|he|she)\s+/i,   /^are (we|they|you|there|these|those)\s+/i,
+        // Bare wh-words last.
+        /^(why|what|when|where|how|who|whose|which)\s+/i,
+      ];
+      for (const p of prefixes) {
+        const stripped = s.replace(p, '');
+        if (stripped !== s) { s = stripped; break; }
+      }
+      if (s.length > 48) s = s.slice(0, 45).replace(/\s+\S*$/, '') + '…';
+      // Lowercase only the very first character — preserves mid-sentence
+      // proper nouns while letting cap() set the final leading capital.
+      return s[0].toLowerCase() + s.slice(1);
+    }
+
+    function buildVerdictText(tileIdx, question) {
+      const formatter = CONCLUSION_FORMATTERS[tileIdx];
+      if (!formatter) return (conclusions[tileIdx] || '').replace(/\n/g, ' ');
+      return formatter(extractSubject(question));
+    }
+
     const mat = document.getElementById('mat');
     const matWrapper = document.querySelector('.mat-wrapper');
     const person = document.getElementById('person');
@@ -1221,6 +1767,72 @@
     const jumpCountEl = document.getElementById('jumpCount');
     const shareBtn = document.getElementById('shareBtn');
     const verdictDateEl = document.getElementById('verdictDate');
+    const askForm = document.getElementById('askForm');
+    const askInput = document.getElementById('askInput');
+    const askClear = document.getElementById('askClear');
+
+    let activeQuestion = '';
+
+    function syncAskState() {
+      const val = askInput.value.trim();
+      askForm.classList.toggle('has-value', val.length > 0);
+    }
+
+    askInput.addEventListener('input', syncAskState);
+    askInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        askInput.blur();
+        jumpBtn.click();
+      }
+    });
+    askClear.addEventListener('click', () => {
+      askInput.value = '';
+      syncAskState();
+      askInput.focus();
+    });
+
+    function currentQuestion() {
+      return askInput.value.trim().slice(0, 120);
+    }
+
+    // First-run hint: appear only after the user's first JUMP without
+    // a question. Dismiss on × click, on the next focus, or on a
+    // successful jump-with-question. Persisted in localStorage.
+    const HINT_KEY = 'jtcmat.hint.ask.v1';
+    function dismissAskHint(markSeen) {
+      const hintEl = document.getElementById('askHint');
+      if (hintEl) hintEl.hidden = true;
+      if (markSeen) {
+        try { localStorage.setItem(HINT_KEY, '1'); } catch (_) {}
+      }
+    }
+    function maybeShowAskHint(hadQuestion) {
+      if (hadQuestion) {
+        // They used the feature; the hint is no longer needed.
+        dismissAskHint(true);
+        return;
+      }
+      let seen = null;
+      try { seen = localStorage.getItem(HINT_KEY); } catch (_) {}
+      if (seen) return;
+      const hintEl = document.getElementById('askHint');
+      if (hintEl) hintEl.hidden = false;
+    }
+    document.getElementById('askHintDismiss').addEventListener('click', () => dismissAskHint(true));
+    askInput.addEventListener('focus', () => {
+      const hintEl = document.getElementById('askHint');
+      if (hintEl && !hintEl.hidden) dismissAskHint(true);
+    });
+
+    function verdictLabelFor(question) {
+      if (!question) return 'Re: Your most pressing question';
+      // Keep the memo aesthetic: mimic a real memo Re: line. Trim a
+      // trailing punctuation so "Re: Should I push to prod?" doesn't
+      // become "Re: Should I push to prod??".
+      const stripped = question.replace(/[?!.]+$/u, '').trim();
+      return `Re: ${stripped || question}`;
+    }
 
     function stampVerdictDate() {
       if (!verdictDateEl) return;
@@ -1244,18 +1856,182 @@
       if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (_) {} }
     }
 
+    function buildPermalink(tileIdx, question, timestampSec) {
+      const url = new URL(location.href);
+      url.search = '';
+      url.hash = '';
+      if (tileIdx != null && tileIdx >= 0) url.searchParams.set('v', String(tileIdx));
+      if (question) url.searchParams.set('q', question);
+      url.searchParams.set('t', String(timestampSec || Math.floor(Date.now() / 1000)));
+      return url.toString();
+    }
+
+    // --- Canvas memo renderer --------------------------------------
+    // Renders the current memo as a 1200×800 PNG that keeps the
+    // typography, meta row, Re: line, watermark, and brand block. This
+    // is what people share — the text-only share threw away the entire
+    // aesthetic.
+    async function renderVerdictToBlob() {
+      if (typeof OffscreenCanvas === 'undefined' && typeof document === 'undefined') return null;
+      try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+
+      const W = 1200, H = 800, PAD = 80;
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      // Background (manila)
+      ctx.fillStyle = '#f4ead4';
+      ctx.fillRect(0, 0, W, H);
+      // Very faint vignette so the paper has a center
+      const vignette = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.75);
+      vignette.addColorStop(0, 'rgba(24, 19, 24, 0)');
+      vignette.addColorStop(1, 'rgba(24, 19, 24, 0.06)');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, W, H);
+
+      const ink = '#181318';
+      const inkMuted = 'rgba(24, 19, 24, 0.55)';
+      const rule = '#c8b890';
+      const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
+      const display = 'Fraunces, "Times New Roman", Georgia, serif';
+
+      // Meta row
+      ctx.textBaseline = 'top';
+      ctx.font = `500 26px ${mono}`;
+      ctx.fillStyle = inkMuted;
+      ctx.textAlign = 'left';
+      ctx.fillText('FROM: DECISION ENGINE', PAD, PAD);
+      const now = new Date();
+      const date = now.toLocaleDateString([], { month: 'short', day: '2-digit' }).toUpperCase();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      ctx.textAlign = 'right';
+      ctx.fillText(`FILED ${date} · ${time}`, W - PAD, PAD);
+
+      // Hairline
+      ctx.fillStyle = rule;
+      ctx.fillRect(PAD, PAD + 58, W - 2 * PAD, 1);
+
+      // Re: line (UPPERCASE, mono, left-aligned)
+      ctx.textAlign = 'left';
+      ctx.font = `500 24px ${mono}`;
+      ctx.fillStyle = inkMuted;
+      const re = (conclusionLabel.textContent || '').toUpperCase();
+      const reLines = wrapCanvasLines(ctx, re, W - 2 * PAD);
+      let reY = PAD + 88;
+      for (const line of reLines) { ctx.fillText(line, PAD, reY); reY += 32; }
+
+      // Verdict — big italic Fraunces, auto-sized to fit the block
+      const verdictText = (conclusionText.textContent || '').trim();
+      const verdictTop = reY + 28;
+      const verdictBlockH = H - PAD - 160 - verdictTop;
+      let verdictFontSize = 96;
+      let verdictLines = [];
+      while (verdictFontSize >= 44) {
+        ctx.font = `italic 700 ${verdictFontSize}px ${display}`;
+        verdictLines = wrapCanvasLines(ctx, verdictText, W - 2 * PAD);
+        const blockH = verdictLines.length * verdictFontSize * 1.12;
+        if (blockH <= verdictBlockH) break;
+        verdictFontSize -= 4;
+      }
+      const lineHeight = verdictFontSize * 1.12;
+      const verdictHeight = verdictLines.length * lineHeight;
+      const verdictStartY = verdictTop + Math.max(0, (verdictBlockH - verdictHeight) / 2);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = ink;
+      ctx.font = `italic 700 ${verdictFontSize}px ${display}`;
+      for (let i = 0; i < verdictLines.length; i++) {
+        ctx.fillText(verdictLines[i], PAD, verdictStartY + i * lineHeight);
+      }
+
+      // Brand block at bottom
+      ctx.textAlign = 'center';
+      ctx.font = `italic 700 28px ${display}`;
+      ctx.fillStyle = ink;
+      ctx.fillText('JUMP TO CONCLUSIONS MAT™', W / 2, H - PAD - 60);
+
+      ctx.font = `500 18px ${mono}`;
+      ctx.fillStyle = inkMuted;
+      ctx.fillText('INITECH · INTEROFFICE · CONFIDENTIAL', W / 2, H - PAD - 24);
+
+      return new Promise((resolve) => {
+        try { canvas.toBlob((blob) => resolve(blob), 'image/png'); }
+        catch (_) { resolve(null); }
+      });
+    }
+
+    function wrapCanvasLines(ctx, text, maxWidth) {
+      if (!text) return [];
+      const lines = [];
+      // Honor explicit newlines first.
+      const paragraphs = String(text).split(/\n+/);
+      for (const para of paragraphs) {
+        const words = para.trim().split(/\s+/).filter(Boolean);
+        let current = '';
+        for (const word of words) {
+          const test = current ? `${current} ${word}` : word;
+          if (ctx.measureText(test).width > maxWidth && current) {
+            lines.push(current);
+            current = word;
+          } else {
+            current = test;
+          }
+        }
+        if (current) lines.push(current);
+      }
+      return lines;
+    }
+
     async function shareVerdict() {
       const text = conclusionText.textContent?.trim();
       if (!text) return;
-      const message = `I jumped to a conclusion: "${text}" — via Jump to Conclusions Mat™`;
+      const permalink = buildPermalink(lastPicked, activeQuestion);
+      const q = activeQuestion ? `I asked "${activeQuestion}" and ` : 'I ';
+      const message = `${q}jumped to a conclusion: "${text}" — via Jump to Conclusions Mat™`;
+
+      // Try image share via Web Share API with files.
+      try {
+        const blob = await renderVerdictToBlob();
+        if (blob) {
+          const file = new File([blob], 'verdict.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+            await navigator.share({ title: 'Jump to Conclusions Mat™', text: message, url: permalink, files: [file] });
+            logEvent('share');
+            return;
+          }
+          // No file-share support? Download the PNG and copy text.
+          const objUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objUrl;
+          a.download = `jtc-mat-${Date.now()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
+          if (navigator.clipboard) {
+            try { await navigator.clipboard.writeText(`${message}\n${permalink}`); } catch (_) {}
+          }
+          shareBtn.textContent = 'Saved ✓';
+          setTimeout(() => { shareBtn.innerHTML = '<span aria-hidden="true">↗</span> Reproduce'; }, 1800);
+          logEvent('share');
+          return;
+        }
+      } catch (_) {
+        // Render failed (font/canvas/memory). Fall through to text share.
+      }
+
+      // Ultimate fallback: text-only share / clipboard.
       try {
         if (navigator.share) {
-          await navigator.share({ title: 'Jump to Conclusions Mat™', text: message, url: location.href });
+          await navigator.share({ title: 'Jump to Conclusions Mat™', text: message, url: permalink });
         } else if (navigator.clipboard) {
-          await navigator.clipboard.writeText(message);
+          await navigator.clipboard.writeText(`${message}\n${permalink}`);
           shareBtn.textContent = 'Copied ✓';
-          setTimeout(() => { shareBtn.innerHTML = '<span aria-hidden="true">↗</span> Share this take'; }, 1600);
+          setTimeout(() => { shareBtn.innerHTML = '<span aria-hidden="true">↗</span> Reproduce'; }, 1600);
         }
+        logEvent('share');
       } catch (_) {}
     }
 
@@ -1265,6 +2041,119 @@
     let isJumping = false;
     const lastLandedTurnByIndex = new Array(conclusions.length).fill(-Infinity);
     const blameCounts = new Array(conclusions.length).fill(0);
+
+    // --- Metrics (local-only, privacy-safe) --------------------------
+    // We never send these anywhere. They're used for the in-page
+    // ?metrics=1 readout to help us decide what to build next.
+    const METRICS_STORAGE_KEY = 'jtcmat.metrics.v1';
+    const METRICS_DEFAULTS = () => ({
+      version: 1,
+      installedAt: new Date().toISOString(),
+      sessions: 0,
+      firstJumpAt: null,
+      lastJumpAt: null,
+      counts: {
+        jumps: 0,
+        jumpsWithQuestion: 0,
+        jumpsAuto: 0,
+        shares: 0,
+        customAdds: 0,
+        resets: 0,
+        archiveOpens: 0,
+        settingsOpens: 0,
+        tuneOpens: 0,
+        narratorToggled: 0,
+        soundToggled: 0,
+      },
+      tileLandings: new Array(12).fill(0),
+      activeDays: {}, // { 'YYYY-MM-DD': count }
+    });
+
+    const metrics = (function loadMetrics() {
+      try {
+        const raw = localStorage.getItem(METRICS_STORAGE_KEY);
+        if (!raw) return METRICS_DEFAULTS();
+        const parsed = JSON.parse(raw);
+        // Light sanity-check; merge onto defaults so new fields exist.
+        const defaults = METRICS_DEFAULTS();
+        return {
+          ...defaults,
+          ...parsed,
+          counts: { ...defaults.counts, ...(parsed.counts || {}) },
+          tileLandings: Array.isArray(parsed.tileLandings) && parsed.tileLandings.length === 12
+            ? parsed.tileLandings
+            : defaults.tileLandings,
+          activeDays: parsed.activeDays || {},
+        };
+      } catch (_) {
+        return METRICS_DEFAULTS();
+      }
+    })();
+
+    function saveMetrics() {
+      try { localStorage.setItem(METRICS_STORAGE_KEY, JSON.stringify(metrics)); }
+      catch (_) {}
+    }
+
+    function todayKey() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function logEvent(name, data) {
+      const now = new Date().toISOString();
+      if (name === 'jump' || name === 'jump_auto') {
+        metrics.counts.jumps += 1;
+        if (name === 'jump_auto') metrics.counts.jumpsAuto += 1;
+        if (data && data.hasQuestion) metrics.counts.jumpsWithQuestion += 1;
+        if (data && typeof data.tile === 'number' && metrics.tileLandings[data.tile] != null) {
+          metrics.tileLandings[data.tile] += 1;
+        }
+        if (!metrics.firstJumpAt) metrics.firstJumpAt = now;
+        metrics.lastJumpAt = now;
+        const key = todayKey();
+        metrics.activeDays[key] = (metrics.activeDays[key] || 0) + 1;
+      } else if (name === 'share')           metrics.counts.shares += 1;
+      else   if (name === 'custom_add')      metrics.counts.customAdds += 1;
+      else   if (name === 'reset')           metrics.counts.resets += 1;
+      else   if (name === 'archive_open')    metrics.counts.archiveOpens += 1;
+      else   if (name === 'settings_open')   metrics.counts.settingsOpens += 1;
+      else   if (name === 'tune_open')       metrics.counts.tuneOpens += 1;
+      else   if (name === 'narrator_toggle') metrics.counts.narratorToggled += 1;
+      else   if (name === 'sound_toggle')    metrics.counts.soundToggled += 1;
+      saveMetrics();
+    }
+
+    // One session per page load.
+    metrics.sessions += 1;
+    saveMetrics();
+
+    // --- Archive (last N verdicts, localStorage) ---------------------
+    const ARCHIVE_STORAGE_KEY = 'jtcmat.archive.v1';
+    const ARCHIVE_MAX = 200;
+    const archive = (function loadArchive() {
+      try {
+        const raw = localStorage.getItem(ARCHIVE_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.slice(-ARCHIVE_MAX) : [];
+      } catch (_) { return []; }
+    })();
+
+    function saveArchive() {
+      try { localStorage.setItem(ARCHIVE_STORAGE_KEY, JSON.stringify(archive)); }
+      catch (_) {}
+    }
+
+    function appendArchiveEntry(entry) {
+      archive.push({
+        t: new Date().toISOString(),
+        v: entry.verdict,
+        q: entry.question || '',
+        i: entry.tileIdx,
+      });
+      if (archive.length > ARCHIVE_MAX) archive.splice(0, archive.length - ARCHIVE_MAX);
+      saveArchive();
+    }
 
     const CONFIG_STORAGE_KEY = 'jtcmat.config.v1';
     const CONFIG_DEFAULTS = Object.freeze({
@@ -1276,6 +2165,7 @@
       narratorRate: 0.95,
       narratorPitch: 0.85,
       personEmoji: '🧍',
+      narratorVoiceURI: '',
     });
     const config = { ...CONFIG_DEFAULTS };
 
@@ -1288,6 +2178,7 @@
       narratorRate:       { el: 'cfgNarratorRate',      value: 'narratorRateValue',      type: 'float', min: 0.5, max: 1.5, decimals: 2 },
       narratorPitch:      { el: 'cfgNarratorPitch',     value: 'narratorPitchValue',     type: 'float', min: 0.5, max: 1.5, decimals: 2 },
       personEmoji:        { el: 'cfgPersonEmoji',       type: 'string', maxLength: 4 },
+      narratorVoiceURI:   { el: 'cfgNarratorVoice',     type: 'string', maxLength: 260 },
     };
 
     function clamp(value, min, max) {
@@ -1492,6 +2383,12 @@
       if (!('speechSynthesis' in window)) return null;
       const voices = window.speechSynthesis.getVoices();
       if (!voices || voices.length === 0) return null;
+      // Honor user-picked voice first; if it's no longer installed, fall
+      // through to the auto-selection heuristic.
+      if (config.narratorVoiceURI) {
+        const saved = voices.find((v) => v.voiceURI === config.narratorVoiceURI);
+        if (saved) return saved;
+      }
       return (
         voices.find((v) => v.lang === 'en-US' && v.default) ||
         voices.find((v) => v.lang === 'en-US') ||
@@ -1558,12 +2455,13 @@
     function getZoneLandingPosition(zoneEl) {
       const matRect = mat.getBoundingClientRect();
       const zoneRect = zoneEl.getBoundingClientRect();
-      // Anchor the avatar so it overhangs the tile's upper-left corner —
-      // most of him sits outside the tile, only the inside heel and head
-      // overlap the tile, leaving the centered title copy readable.
+      // Sit in the tile's upper-left, fully inside. Previous -10 / -4
+      // overhang looked good on single-tile previews but on the grid it
+      // intruded onto the neighbour above; keep it inside so the avatar
+      // is always clearly on the tile it landed on.
       return {
-        x: zoneRect.left - matRect.left - 4,
-        y: zoneRect.top  - matRect.top  - 4,
+        x: zoneRect.left - matRect.left + 3,
+        y: zoneRect.top  - matRect.top  + 3,
       };
     }
 
@@ -1596,6 +2494,28 @@
         if (internZone && Math.random() < config.internBiasChance) return internZone;
       }
 
+      // Context bias: if the user asked a question, tilt the roll toward
+      // conclusions whose tags match. Base weight 1, +3 per keyword hit,
+      // so a 2-match tile is ~7× a non-matching tile — enough to feel
+      // intentional, not enough to feel deterministic.
+      const question = askInput && askInput.value ? askInput.value.trim() : '';
+      const scores = scoreConclusionsForQuestion(question);
+      if (scores) {
+        const weights = landingPool.map((zoneEl) => {
+          const idx = Number(zoneEl.dataset.index);
+          return 1 + (scores[idx] || 0) * 3;
+        });
+        let total = 0;
+        for (const w of weights) total += w;
+        if (total > 0) {
+          let pick = Math.random() * total;
+          for (let i = 0; i < landingPool.length; i++) {
+            pick -= weights[i];
+            if (pick <= 0) return landingPool[i];
+          }
+        }
+      }
+
       return randomFrom(landingPool);
     }
 
@@ -1625,7 +2545,10 @@
       const zones = Array.from(mat.querySelectorAll('.zone'));
       const landedZone = chooseLandingZone(zones);
       const picked = Number(landedZone.dataset.index);
-      const selectedText = conclusions[picked].replace(/\n/g, ' ');
+      activeQuestion = currentQuestion();
+      const selectedText = buildVerdictText(picked, activeQuestion);
+      logEvent('jump', { tile: picked, hasQuestion: activeQuestion.length > 0 });
+      appendArchiveEntry({ verdict: selectedText, question: activeQuestion, tileIdx: picked });
 
       // Speak NOW while we're still inside the user-gesture call stack.
       // iOS Safari blocks speechSynthesis.speak() outside a gesture, so
@@ -1633,18 +2556,23 @@
       // queued without starting.
       narrate(selectedText);
 
-      // Quick hop animation across random zones before landing
+      // Quick hop animation across random zones before landing.
+      // The final 3 hops decelerate so the mat "comes to rest" like a
+      // game-show reel, and the verdict reveal gets a 400ms anticipation
+      // beat after the boing lands — more show, less slot machine.
       let hops = 0;
       const totalHops = (chaosMode.checked ? config.hopCountBase + 4 : config.hopCountBase) + Math.floor(Math.random() * 4);
+      const baseHop = config.hopIntervalMs;
+      function hopDelayForRemaining(remaining) {
+        if (remaining === 0) return Math.round(baseHop * 2.5);
+        if (remaining === 1) return Math.round(baseHop * 1.8);
+        if (remaining === 2) return Math.round(baseHop * 1.35);
+        return baseHop;
+      }
 
       await new Promise((resolve) => {
-        const hopInterval = setInterval(() => {
-          const tempZone = randomFrom(zones);
-          placePerson(tempZone, hops % 2 === 0);
-          hops++;
+        function doHop() {
           if (hops >= totalHops) {
-            clearInterval(hopInterval);
-
             // Final landing
             placePerson(landedZone, true);
             landedZone.classList.add('active');
@@ -1654,7 +2582,7 @@
             blameCounts[picked] += 1;
             landedZone.dataset.hit = String(blameCounts[picked]);
 
-            conclusionLabel.textContent = 'Re: Your most pressing question';
+            conclusionLabel.textContent = verdictLabelFor(activeQuestion);
             conclusionText.classList.remove('empty');
             conclusionText.textContent = selectedText;
             stampVerdictDate();
@@ -1668,6 +2596,7 @@
             }
             lastPicked = picked;
 
+            // Anticipation beat: let the landing register, then reveal.
             setTimeout(() => {
               conclusionText.classList.add('visible');
               jumpCountEl.textContent = `${jumpCount} conclusion${jumpCount !== 1 ? 's' : ''} jumped to`;
@@ -1675,10 +2604,18 @@
               shareBtn.hidden = false;
               document.body.classList.add('has-jumped');
               updateStatsLine();
+              maybeShowAskHint(activeQuestion.length > 0);
               resolve();
-            }, 150);
+            }, 420);
+            return;
           }
-        }, config.hopIntervalMs);
+
+          const tempZone = randomFrom(zones);
+          placePerson(tempZone, hops % 2 === 0);
+          hops++;
+          setTimeout(doHop, hopDelayForRemaining(totalHops - hops));
+        }
+        doHop();
       });
 
       isJumping = false;
@@ -1748,11 +2685,87 @@
       else sheet.removeAttribute('open');
     }
 
-    document.getElementById('openSettingsBtn').addEventListener('click', () => openSheet(settingsSheet));
+    document.getElementById('openSettingsBtn').addEventListener('click', () => {
+      logEvent('settings_open');
+      openSheet(settingsSheet);
+    });
     document.getElementById('openConfigBtn').addEventListener('click', () => {
+      logEvent('tune_open');
       // Don't stack sheets — close Settings before opening Config.
       closeSheet(settingsSheet);
       openSheet(configSheet);
+    });
+
+    const archiveSheet = document.getElementById('archiveSheet');
+    const archiveListEl = document.getElementById('archiveList');
+    const archiveEmptyEl = document.getElementById('archiveEmpty');
+    const archiveSummaryEl = document.getElementById('archiveSummary');
+
+    function formatArchiveDate(iso) {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      const date = d.toLocaleDateString([], { month: 'short', day: '2-digit' }).toUpperCase();
+      const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      return `${date} · ${time}`;
+    }
+
+    function renderArchive() {
+      archiveListEl.innerHTML = '';
+      if (archive.length === 0) {
+        archiveEmptyEl.hidden = false;
+        archiveSummaryEl.textContent = 'No verdicts on file.';
+        return;
+      }
+      archiveEmptyEl.hidden = true;
+      archiveSummaryEl.textContent = `${archive.length} verdict${archive.length !== 1 ? 's' : ''} on file · oldest first archived ${formatArchiveDate(archive[0].t)}`;
+      const frag = document.createDocumentFragment();
+      // Newest first.
+      for (let idx = archive.length - 1; idx >= 0; idx--) {
+        const e = archive[idx];
+        const li = document.createElement('li');
+        li.className = 'archive-entry';
+        const re = e.q ? `Re: ${e.q.replace(/[?!.]+$/u, '').trim() || e.q}` : 'Re: Your most pressing question';
+        const meta = document.createElement('div');
+        meta.className = 'archive-meta';
+        const tileLabel = e.i != null && conclusions[e.i]
+          ? `Tile ${e.i + 1}`
+          : 'Tile —';
+        meta.innerHTML = `<span>${formatArchiveDate(e.t)}</span><span class="archive-tile">${tileLabel}</span>`;
+        const reEl = document.createElement('div');
+        reEl.className = 'archive-re';
+        reEl.textContent = re;
+        const verdictEl = document.createElement('div');
+        verdictEl.className = 'archive-verdict';
+        verdictEl.textContent = e.v;
+        li.appendChild(meta);
+        li.appendChild(reEl);
+        li.appendChild(verdictEl);
+        frag.appendChild(li);
+      }
+      archiveListEl.appendChild(frag);
+    }
+
+    document.getElementById('openArchiveBtn').addEventListener('click', () => {
+      logEvent('archive_open');
+      closeSheet(settingsSheet);
+      renderArchive();
+      openSheet(archiveSheet);
+    });
+
+    document.getElementById('clearArchiveBtn').addEventListener('click', () => {
+      if (archive.length === 0) return;
+      if (!confirm(`Purge all ${archive.length} filed verdicts?`)) return;
+      archive.length = 0;
+      saveArchive();
+      renderArchive();
+    });
+
+    // Close-on-backdrop for archive sheet (other sheets already wire this up
+    // via the forEach below; keep the list centralized).
+    [archiveSheet].forEach((sheet) => {
+      sheet.addEventListener('click', (e) => {
+        if (e.target === sheet) closeSheet(sheet);
+      });
     });
 
     // After clicking Reset (which lives inside Settings), dismiss the sheet
@@ -1796,8 +2809,11 @@
 
     bindDockToggle(soundToggle, soundMode);
     bindDockToggle(narratorToggle, narratorMode);
+    soundMode.addEventListener('change', () => logEvent('sound_toggle'));
+    narratorMode.addEventListener('change', () => logEvent('narrator_toggle'));
 
     resetBtn.addEventListener('click', () => {
+      logEvent('reset');
       jumpCount = 0;
       lastPicked = -1;
       for (let i = 0; i < conclusions.length; i++) {
@@ -1809,6 +2825,9 @@
         zone.dataset.hit = '';
       });
       currentZone = null;
+      activeQuestion = '';
+      askInput.value = '';
+      syncAskState();
       setVerdictEmpty();
       jumpBtn.textContent = 'JUMP';
       document.body.classList.remove('has-jumped');
@@ -1827,6 +2846,7 @@
       if (zone) zone.textContent = customText;
       customConclusionInput.value = '';
       updateStatsLine();
+      logEvent('custom_add');
       conclusionLabel.textContent = 'Re: Mat mutation';
       conclusionText.classList.remove('empty');
       conclusionText.textContent = `Zone ${indexToReplace + 1} now reads: "${customText}".`;
@@ -1891,6 +2911,175 @@
     loadConfig();
     renderConfigInputs();
     bindConfigInputs();
+
+    // --- Narrator voice picker ---------------------------------------
+    (function mountVoicePicker() {
+      if (!('speechSynthesis' in window)) return;
+      const select = document.getElementById('cfgNarratorVoice');
+      const testBtn = document.getElementById('narratorVoiceTest');
+      if (!select) return;
+
+      function describeVoice(v) {
+        const lang = v.lang ? ` · ${v.lang}` : '';
+        const local = v.localService ? '' : ' ☁';
+        return `${v.name}${lang}${local}`;
+      }
+
+      function populate() {
+        const voices = window.speechSynthesis.getVoices() || [];
+        // Keep "Auto" at top; rebuild the rest.
+        while (select.options.length > 1) select.remove(1);
+        const english = voices
+          .filter((v) => v.lang && /^en/i.test(v.lang))
+          .sort((a, b) => {
+            // Default first, then localService, then alphabetic.
+            if ((b.default ? 1 : 0) !== (a.default ? 1 : 0)) return (b.default ? 1 : 0) - (a.default ? 1 : 0);
+            if ((b.localService ? 1 : 0) !== (a.localService ? 1 : 0)) return (b.localService ? 1 : 0) - (a.localService ? 1 : 0);
+            return a.name.localeCompare(b.name);
+          });
+        for (const v of english) {
+          const opt = document.createElement('option');
+          opt.value = v.voiceURI;
+          opt.textContent = describeVoice(v);
+          select.appendChild(opt);
+        }
+        // Restore saved selection if still present.
+        if (config.narratorVoiceURI && voices.some((v) => v.voiceURI === config.narratorVoiceURI)) {
+          select.value = config.narratorVoiceURI;
+        } else {
+          select.value = '';
+        }
+      }
+
+      populate();
+      window.speechSynthesis.addEventListener?.('voiceschanged', populate);
+
+      testBtn?.addEventListener('click', () => {
+        try { window.speechSynthesis.resume(); } catch (_) {}
+        try { window.speechSynthesis.cancel(); } catch (_) {}
+        const utter = new SpeechSynthesisUtterance(
+          'Per the Initech Decision Engine, this is how I sound.'
+        );
+        utter.rate = config.narratorRate;
+        utter.pitch = config.narratorPitch;
+        const picked = pickEnglishVoice();
+        if (picked) utter.voice = picked;
+        try { window.speechSynthesis.speak(utter); } catch (_) {}
+      });
+    })();
+
+    // --- Permalink reproducer --------------------------------------
+    // ?v=<tileIdx>&q=<question>&t=<unixSeconds>
+    // When present, render the memo deterministically on load without
+    // running the hop animation. Lets someone share an exact verdict.
+    (function maybeReproduceVerdict() {
+      const params = new URLSearchParams(location.search);
+      const rawV = params.get('v');
+      if (rawV == null) return;
+      const idx = parseInt(rawV, 10);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= conclusions.length) return;
+      const question = (params.get('q') || '').slice(0, 120);
+      const tSec = parseInt(params.get('t'), 10);
+      const filedAt = Number.isInteger(tSec) ? new Date(tSec * 1000) : new Date();
+
+      activeQuestion = question;
+      if (question) {
+        askInput.value = question;
+        syncAskState();
+      }
+
+      const zone = mat.querySelector(`.zone[data-index="${idx}"]`);
+      if (zone) {
+        zone.classList.add('active');
+        zone.dataset.hit = '1';
+        currentZone = zone;
+        requestAnimationFrame(() => placePerson(zone, false));
+      }
+
+      const selectedText = buildVerdictText(idx, activeQuestion);
+      conclusionLabel.textContent = verdictLabelFor(activeQuestion);
+      conclusionText.classList.remove('empty');
+      conclusionText.textContent = selectedText;
+      if (verdictDateEl) {
+        const time = filedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        const date = filedAt.toLocaleDateString([], { month: 'short', day: '2-digit' }).toUpperCase();
+        verdictDateEl.textContent = `Filed ${date} · ${time}`;
+      }
+      conclusionText.classList.add('visible');
+      jumpCountEl.textContent = 'Shared verdict · tap JUMP to roll your own';
+      jumpBtn.textContent = 'JUMP';
+      shareBtn.hidden = false;
+      lastPicked = idx;
+      document.body.classList.add('has-jumped');
+    })();
+
+    // --- Metrics overlay (visible only with ?metrics=1 or #metrics) ---
+    (function mountMetricsPanel() {
+      const enabled = /[?&]metrics=1\b/.test(location.search) || location.hash === '#metrics';
+      if (!enabled) return;
+      const panel = document.createElement('aside');
+      panel.className = 'metrics-panel';
+      panel.setAttribute('aria-label', 'Local metrics');
+      document.body.appendChild(panel);
+
+      function daysSince(iso) {
+        if (!iso) return '—';
+        const then = new Date(iso).getTime();
+        if (Number.isNaN(then)) return '—';
+        const days = Math.floor((Date.now() - then) / 86400000);
+        return days === 0 ? 'today' : `${days}d ago`;
+      }
+
+      function fmt(n) { return Number(n || 0).toLocaleString(); }
+
+      function render() {
+        const c = metrics.counts;
+        const total = c.jumps || 0;
+        const qPct = total > 0 ? Math.round((c.jumpsWithQuestion / total) * 100) : 0;
+        const sharePct = total > 0 ? Math.round((c.shares / total) * 100) : 0;
+        const activeDays = Object.keys(metrics.activeDays || {}).length;
+        const top = metrics.tileLandings
+          .map((hits, i) => ({ hits, i, label: (conclusions[i] || '—').replace(/\n/g, ' ') }))
+          .sort((a, b) => b.hits - a.hits)
+          .slice(0, 3)
+          .filter((x) => x.hits > 0);
+        panel.innerHTML = `
+          <header><strong>Metrics</strong><button type="button" class="metrics-close" aria-label="Close">×</button></header>
+          <dl>
+            <div><dt>Installed</dt><dd>${daysSince(metrics.installedAt)}</dd></div>
+            <div><dt>Sessions</dt><dd>${fmt(metrics.sessions)}</dd></div>
+            <div><dt>Active days</dt><dd>${fmt(activeDays)}</dd></div>
+            <div><dt>Jumps</dt><dd>${fmt(c.jumps)} <span>(auto ${fmt(c.jumpsAuto)})</span></dd></div>
+            <div><dt>With question</dt><dd>${fmt(c.jumpsWithQuestion)} <span>(${qPct}%)</span></dd></div>
+            <div><dt>Shares</dt><dd>${fmt(c.shares)} <span>(${sharePct}%)</span></dd></div>
+            <div><dt>Custom adds</dt><dd>${fmt(c.customAdds)}</dd></div>
+            <div><dt>Resets</dt><dd>${fmt(c.resets)}</dd></div>
+            <div><dt>Settings opens</dt><dd>${fmt(c.settingsOpens)}</dd></div>
+            <div><dt>Tune opens</dt><dd>${fmt(c.tuneOpens)}</dd></div>
+            <div><dt>Sound toggled</dt><dd>${fmt(c.soundToggled)}</dd></div>
+            <div><dt>Narrator toggled</dt><dd>${fmt(c.narratorToggled)}</dd></div>
+            <div><dt>First jump</dt><dd>${daysSince(metrics.firstJumpAt)}</dd></div>
+            <div><dt>Last jump</dt><dd>${daysSince(metrics.lastJumpAt)}</dd></div>
+          </dl>
+          ${top.length ? `<div class="metrics-top"><strong>Top tiles</strong><ul>${top.map((t) => `<li><span>${t.label}</span><em>${fmt(t.hits)}</em></li>`).join('')}</ul></div>` : ''}
+          <div class="metrics-actions">
+            <button type="button" class="metrics-clear">Clear metrics</button>
+          </div>
+        `;
+        panel.querySelector('.metrics-close').addEventListener('click', () => panel.remove());
+        panel.querySelector('.metrics-clear').addEventListener('click', () => {
+          if (!confirm('Clear all locally-stored metrics?')) return;
+          try { localStorage.removeItem(METRICS_STORAGE_KEY); } catch (_) {}
+          Object.assign(metrics, METRICS_DEFAULTS());
+          saveMetrics();
+          render();
+        });
+      }
+
+      render();
+      // Live-refresh so counters tick up as the user interacts.
+      setInterval(render, 1500);
+    })();
   </script>
 </body>
 </html>
