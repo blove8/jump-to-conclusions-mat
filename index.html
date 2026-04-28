@@ -290,6 +290,9 @@
     }
 
     .ask-intake {
+      /* Hidden during diorama Phase A; JS still reads an empty value and
+         falls back to non-question verdicts. Re-enable by removing display:none. */
+      display: none;
       position: relative;
       z-index: 1;
       width: 100%;
